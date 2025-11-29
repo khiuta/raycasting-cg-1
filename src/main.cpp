@@ -1,0 +1,320 @@
+#include "../utils/Point4.hpp"
+#include "../utils/Point3.hpp"
+#include "../utils/Vector4.hpp"
+#include "../utils/Triangle.hpp"
+#include "../utils/Object.hpp"
+#include "../utils/HitRecord.hpp"
+#include "../utils/ListMesh.hpp"
+#include "../utils/Matrix4.hpp"
+#include <cmath>
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <memory>
+#include <string>
+#include <sstream>
+#include <numbers>
+
+const float wWindow = 4.f, hWindow = 3.f;
+const int nCol = wWindow*200, nLin = hWindow*200;
+float dx = wWindow / nCol;
+float dy = hWindow / nLin;
+float dWindow = 4.0f;
+
+Point4 lightPos(5, 3, 0);
+Point3 amb_light(.3, .3, .3);
+Point4 observer_pos(0, 0, 0);
+
+std::vector<std::unique_ptr<Object>> world;
+
+void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& ndc_y) {
+  ndc_x = -wWindow/2.0f + dx/2.0f + display_x*dx;
+  ndc_y = hWindow/2.0f - dy/2.0f - display_y*dy;
+}
+
+Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
+  Point3 obj_color = rec.obj_ptr->getColor();
+  Point3 mat_dif = rec.obj_ptr->getDiffuse();
+  Point3 mat_spec = rec.obj_ptr->getSpecular();
+
+  Point3 amb_color(obj_color.x*amb_light.x, obj_color.y*amb_light.y, obj_color.z*amb_light.z);
+  
+  Vector4 light_dir = light_pos - rec.p_int;
+  float dist_to_light = light_dir.length();
+  light_dir.normalize();
+  Vector4 d_inv = observer_pos - rec.p_int;
+  d_inv.normalize();
+
+  bool on_shadow = false;
+  for(const auto& other : world) {
+    if(other.get() == rec.obj_ptr) continue;
+    HitRecord temp_rec;
+    if(other->Intersect(rec.p_int, light_dir, 0.001f, dist_to_light, temp_rec)){
+      on_shadow = true;
+      break;
+    }
+  }
+  if(on_shadow) return amb_color;
+
+  // diffuse lighting
+  Point3 diff_light(1, 1, 1);
+  float dif_i = std::max(0.f, dot(rec.normal, light_dir));
+  Point3 diff_color(
+    diff_light.x*mat_dif.x*dif_i,
+    diff_light.y*mat_dif.y*dif_i,
+    diff_light.z*mat_dif.z*dif_i
+  );
+
+  // specular lighting
+  Point3 spec_light(1, 1, 1);
+  int brightness = 50; // light scattering factor
+  Vector4 reflection = reflect(rec.normal, light_dir);
+  float spec_i = pow(std::max(0.f, dot(reflection, d_inv)), brightness);
+  Point3 spec_color(
+    spec_light.x*mat_spec.x*spec_i,
+    spec_light.y*mat_spec.y*spec_i,
+    spec_light.z*mat_spec.z*spec_i
+  );
+
+  Point3 final_color(amb_color+diff_color+spec_color);
+  final_color.clamp();
+  return final_color;
+}
+
+void raycast(std::ofstream &image, int lin_start, int col_start, int width, int height) {
+  for(int l = lin_start; l < lin_start+height; l++){
+    for(int c = col_start; c < col_start+width; c++){
+      float x, y;
+      convertDisplayToWindow(c, l, x, y);
+
+      Vector4 d(x - observer_pos.x, y - observer_pos.y, -dWindow);
+      d.normalize();
+
+      float closest_so_far = 99999;
+      HitRecord rec;
+      bool hit_anything = false;
+      for(const auto& object : world){
+        HitRecord temp_rec;
+        if(object->Intersect(observer_pos, d, 0, closest_so_far, temp_rec)){
+          hit_anything = true;
+          closest_so_far = temp_rec.t;
+          rec = temp_rec;
+        }
+      }
+
+      if(hit_anything){
+        Point3 final_color = setColor(d, rec, lightPos);
+        int r_int = (int)(final_color.x * 255);
+        int g_int = (int)(final_color.y * 255);
+        int b_int = (int)(final_color.z * 255);
+        
+        image << r_int << " " << g_int << " " << b_int << " ";
+      } else {
+        image << 100 << " " << 100 << " " << 100 << " ";
+      }
+    }
+    image << "\n";
+  }
+}
+
+std::pair<int, int> get_indices(const std::string& token) {
+    size_t first_slash = token.find('/');
+    size_t second_slash = token.find('/', first_slash + 1);
+
+    int v_idx = 0;
+    int vn_idx = 0;
+
+    // Extrai o índice do Vértice (V)
+    if (first_slash != std::string::npos) {
+        v_idx = std::stoi(token.substr(0, first_slash));
+    } else {
+        // Se não houver barras, assume que é apenas o índice do vértice
+        v_idx = std::stoi(token);
+    }
+    
+    // Extrai o índice da Normal (N)
+    if (second_slash != std::string::npos) {
+        // Se houver uma segunda barra, o token é V/VT/N ou V//N
+        vn_idx = std::stoi(token.substr(second_slash + 1));
+    }
+    
+    return {v_idx, vn_idx};
+}
+
+void ler_arquivo_linha_a_linha(const std::string& nome_arquivo, 
+                               std::vector<std::unique_ptr<Point4>> &v,
+                               std::vector<std::unique_ptr<Vector4>> &vn, 
+                               std::vector<std::unique_ptr<Point4>> &vt, 
+                               std::vector<std::unique_ptr<Triangle>> &f,
+                               Point4 &centroid) {
+    
+    std::ifstream arquivo(nome_arquivo);
+
+    if (!arquivo.is_open()) {
+        std::cerr << "ERRO: Não foi possível abrir o arquivo " << nome_arquivo << std::endl;
+        return;
+    }
+
+    std::string linha;
+    float max_x, min_x, max_y, min_y, max_z, min_z;
+    bool first_vertice = true;
+
+    while (std::getline(arquivo, linha)) {
+        if (linha.empty() || linha[0] == '#' || linha[0] == 'm' || linha[0] == 'u' || linha[0] == 's' || linha[0] == 'o') continue; 
+
+        std::stringstream ss(linha);
+        std::string tipo;
+        ss >> tipo;
+        
+        if (tipo == "v") {
+            // ... (código de leitura de vértices igual) ...
+            float x, y, z;
+            if (ss >> x >> y >> z) {
+              if(first_vertice){
+                max_x = min_x = x;
+                max_y = min_y = y;
+                max_z = min_z = z;
+                first_vertice = false;
+              } else {
+                if(x < min_x) min_x = x;
+                if(x > max_x) max_x = x;
+                if(y < min_y) min_y = y;
+                if(y > max_y) max_y = y;
+                if(z < min_z) min_z = z;
+                if(z > max_z) max_z = z;
+              }
+                v.push_back(std::make_unique<Point4>(x, y, z));
+            }
+        } 
+        else if (tipo == "vn") {
+            // ... (código de leitura de normais igual) ...
+            float x, y, z;
+            if (ss >> x >> y >> z) {
+                vn.push_back(std::make_unique<Vector4>(x, y, z));
+            }
+        }
+        else if (tipo == "vt") {
+            // ... (código de leitura de textura igual) ...
+            float u, v_coord; 
+            if (ss >> u >> v_coord) {
+                vt.push_back(std::make_unique<Point4>(u, v_coord, 0.0f)); 
+            }
+        }
+        else if (tipo == "f") {
+            std::string token;
+            std::vector<std::pair<int, int>> face_indices; // {V_idx, VN_idx}
+
+            while (ss >> token) {
+                face_indices.push_back(get_indices(token));
+            }
+            
+            // Cria triângulos
+            for (size_t i = 1; i < face_indices.size() - 1; ++i) {
+                // Índices dos vértices (base 0)
+                int v1_idx = face_indices[0].first - 1;
+                int v2_idx = face_indices[i].first - 1;
+                int v3_idx = face_indices[i+1].first - 1;
+
+                // Índices das normais (base 0)
+                // Nota: Se o arquivo não tiver normais, vn_idx será -1 ou inválido.
+                int vn1_idx = face_indices[0].second - 1;
+                // int vn2_idx = face_indices[i].second - 1;   // Para smooth shading futuro
+                // int vn3_idx = face_indices[i+1].second - 1; // Para smooth shading futuro
+
+                Point4 p1 = *v[v1_idx];
+                Point4 p2 = *v[v2_idx];
+                Point4 p3 = *v[v3_idx];
+                
+                // --- ATUALIZAÇÃO AQUI ---
+                // Verifica se existe uma normal válida para usar
+                if (vn1_idx >= 0 && vn1_idx < vn.size()) {
+                    Vector4 normal = *vn[vn1_idx];
+                    // Usa o NOVO construtor que aceita a normal
+                    f.push_back(std::make_unique<Triangle>(p1, p2, p3, normal));
+                } else {
+                    // Fallback para o construtor antigo (calcula normal automaticamente)
+                    // Caso o arquivo OBJ não tenha normais (vn)
+                    //f.push_back(std::make_unique<Triangle>(p1, p2, p3));
+                }
+            }
+        }
+    }
+
+    centroid.x = (max_x + min_x)/2;
+    centroid.y = (max_y + min_y)/2;
+    centroid.z = (max_z + min_z)/2;
+    arquivo.close();
+}
+
+float random_float2() {
+  static std::mt19937 generator(
+    std::chrono::high_resolution_clock::now().time_since_epoch().count()
+  );
+  
+  static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+  
+  return distribution(generator);
+}
+
+int main() {
+  std::ofstream image("image.ppm");
+  std::vector<std::unique_ptr<Point4>> v;
+  std::vector<std::unique_ptr<Vector4>> vn;
+  std::vector<std::unique_ptr<Point4>> vt;
+  std::vector<std::unique_ptr<Triangle>> f;
+  Point4 centroid;
+  ler_arquivo_linha_a_linha("cube.obj", v, vn, vt, f, centroid);
+  //ListMesh cube(std::move(f), std::move(v), centroid);
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid);
+
+  int frames = 180;
+  float x = random_float2();
+  float y = random_float2();
+  float z = random_float2();
+  for(int i = 0; i < frames; i++){
+    std::string image_name = "frames/";
+    if(i < 10) image_name += "frame_00" + std::to_string(i);
+    else if(i < 100) image_name += "frame_0" + std::to_string(i);
+    else image_name += "frame_" + std::to_string(i);
+    image_name += ".ppm";
+    std::ofstream image(image_name);
+
+    if((i+1) % 30 == 0){
+      x = random_float2();
+      y = random_float2();
+      z = random_float2();
+    }
+
+    // transforming the cube
+    cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
+    cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
+    cube->applyTranslate(translate(Vector4(cube->centroid.x, cube->centroid.y, cube->centroid.z)));
+    cube->applyTranslate(translate(Vector4(0, 0, -10.0f)));
+
+    // putting the transformed cube in the world
+    world.push_back(std::move(cube));
+
+    // rendering
+    if(image.is_open()) {
+      image << "P3\n";
+      image << nCol << " " << nLin << "\n";
+      image << 255 << "\n";
+
+      raycast(image, 0, 0, nCol, nLin);
+
+      image.close();
+    }
+
+    std::cout << "Frames renderized: [" << i+1 << "] out of: " << frames << "\n";
+
+    // creating a pointer to the transformed cube
+    std::unique_ptr<Object> temp_generic = std::move(world.back());
+    // giving the ownership back to cube
+    cube.reset(static_cast<ListMesh*>(temp_generic.release()));
+    // getting the cube out of world so theres always only one cube
+    world.pop_back();
+    // get the cube back to its original position
+    cube->applyTranslate(translate(Vector4(0, 0, 10.0f)));
+  }
+}
