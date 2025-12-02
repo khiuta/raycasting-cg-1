@@ -6,6 +6,7 @@
 #include "../utils/HitRecord.hpp"
 #include "../utils/ListMesh.hpp"
 #include "../utils/Matrix4.hpp"
+#include "../utils/Plain.hpp"
 #include <cmath>
 #include <algorithm>
 #include <fstream>
@@ -26,6 +27,12 @@ Point4 lightPos(5, 3, 0);
 Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
+Point4 lookFrom(0.0f, 5.0f, 10.0f);
+Point4 lookAt(0.0f, 0.0f, -15.0f);
+Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
+
+Vector4 u, v_cam, w;
+
 std::vector<std::unique_ptr<Object>> world;
 
 void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& ndc_y) {
@@ -43,7 +50,7 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
   Vector4 light_dir = light_pos - rec.p_int;
   float dist_to_light = light_dir.length();
   light_dir.normalize();
-  Vector4 d_inv = observer_pos - rec.p_int;
+  Vector4 d_inv = lookFrom - rec.p_int;
   d_inv.normalize();
 
   bool on_shadow = false;
@@ -88,7 +95,8 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       float x, y;
       convertDisplayToWindow(c, l, x, y);
 
-      Vector4 d(x - observer_pos.x, y - observer_pos.y, -dWindow);
+      //Vector4 d(x - observer_pos.x, y - observer_pos.y, -dWindow);
+      Vector4 d = (u * x) + (v_cam * y) - (w * dWindow);
       d.normalize();
 
       float closest_so_far = 99999;
@@ -96,7 +104,7 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       bool hit_anything = false;
       for(const auto& object : world){
         HitRecord temp_rec;
-        if(object->Intersect(observer_pos, d, 0, closest_so_far, temp_rec)){
+        if(object->Intersect(lookFrom, d, 0, closest_so_far, temp_rec)){
           hit_anything = true;
           closest_so_far = temp_rec.t;
           rec = temp_rec;
@@ -148,7 +156,7 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
                                std::vector<std::unique_ptr<Point4>> &vt, 
                                std::vector<std::unique_ptr<Triangle>> &f,
                                Point4 &centroid) {
-    
+
     std::ifstream arquivo(nome_arquivo);
 
     if (!arquivo.is_open()) {
@@ -265,8 +273,40 @@ int main() {
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   ler_arquivo_linha_a_linha("cube.obj", v, vn, vt, f, centroid);
+  std::cout << "Loaded " << f.size() << " triangles on object cube.obj\n";
   //ListMesh cube(std::move(f), std::move(v), centroid);
   std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid);
+  Point3 specular_plains(.1, .1, .1);
+  Point3 back_wall_col(.9, .3, .5);
+  Point3 front_wall_col(.5, .7, 1);
+  Point3 left_wall_col(.1, .5, .5);
+  Point3 right_wall_col(.6, .2, .7);
+  Point3 ceiling_col(.2, .2, .9);
+  Point3 floor_col(.9, .5, 0);
+  Plain back_wall(Point4(0, 0, -200), Vector4(0, 0, 1), back_wall_col, back_wall_col, specular_plains);
+  Plain front_wall(Point4(0, 0, 100), Vector4(0, 0, -1), front_wall_col, front_wall_col, specular_plains);
+  Plain left_wall(Point4(-100, 0, 0), Vector4(1, 0, 0), left_wall_col, left_wall_col, specular_plains);
+  Plain right_wall(Point4(100, 0, 0), Vector4(-1, 0, 0), right_wall_col, right_wall_col, specular_plains);
+  Plain ceiling(Point4(0, 100, 0), Vector4(0, -1, 0), ceiling_col, ceiling_col, specular_plains);
+  Plain floor(Point4(0, -50, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains);
+
+  world.push_back(std::make_unique<Plain>(back_wall));
+  world.push_back(std::make_unique<Plain>(front_wall));
+  world.push_back(std::make_unique<Plain>(left_wall));
+  world.push_back(std::make_unique<Plain>(right_wall));
+  world.push_back(std::make_unique<Plain>(ceiling));
+  world.push_back(std::make_unique<Plain>(floor));
+
+  w = (lookFrom - lookAt); // Vetor apontando para trás
+  w.normalize();
+
+  u = cross(vUp, w); // Vetor apontando para a direita
+  u.normalize();
+
+  v_cam = cross(w, u);
+
+  float raio = 20.0f; // Distância da câmera ao cubo
+  float altura_camera = 5.0f;
 
   int frames = 180;
   float x = random_float2();
@@ -285,6 +325,19 @@ int main() {
       y = random_float2();
       z = random_float2();
     }
+    float theta = (2.0f * 3.14159f * i) / frames;
+    float novo_x = lookAt.x + raio * std::sin(theta);
+    float novo_z = lookAt.z + raio * std::cos(theta);
+
+    lookFrom = Point4(novo_x, altura_camera, novo_z);
+
+    w = (lookFrom - lookAt); 
+    w.normalize();
+
+    u = cross(vUp, w); 
+    u.normalize();
+
+    v_cam = cross(w, u);
 
     // transforming the cube
     cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
@@ -306,7 +359,7 @@ int main() {
       image.close();
     }
 
-    std::cout << "Frames renderized: [" << i+1 << "] out of: " << frames << "\n";
+    std::cout << "Frames rendered: [" << i+1 << "] out of: " << frames << "\n";
 
     // creating a pointer to the transformed cube
     std::unique_ptr<Object> temp_generic = std::move(world.back());

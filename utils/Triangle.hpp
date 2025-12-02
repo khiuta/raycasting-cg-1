@@ -21,9 +21,11 @@ class Triangle : public Object {
     void applyScale(const Matrix4 &m);
     void applyRotation(const Matrix4 &m);
 
-    const Point3 getColor() const override { return color; };
-    const Point3 getDiffuse() const override { return dif_color; };
-    const Point3 getSpecular() const override { return spec_color; };
+    const Vector4 getNormal() const { return normal; };
+
+    const Point3& getColor() const override { return color; };
+    const Point3& getDiffuse() const override { return dif_color; };
+    const Point3& getSpecular() const override { return spec_color; };
 };
 
 #endif

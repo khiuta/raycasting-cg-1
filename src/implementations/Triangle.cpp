@@ -27,12 +27,13 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   float r = random_float();
   float g = random_float();
   float b = random_float();
-  this->color = Point3(1, 0, 1);
-  this->dif_color = Point3(1, 0, 1);
+  this->color = Point3(0.35, 0.35, 0.35);
+  this->dif_color = Point3(0.35, 0.35, 0.35);
   this->spec_color = Point3(.1, .1, .1);
 }
 
 bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const {
+  if(dot(normal, dir) >= 0) return false;
   float denominator = dot(this->normal, dir);
   double t = 0;
   if(std::abs(denominator) > 0.0001f){

@@ -9,9 +9,9 @@ class Object {
   public:
     virtual ~Object() = default;
     virtual bool Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const = 0;
-    virtual const Point3 getColor() const = 0;
-    virtual const Point3 getDiffuse() const = 0;
-    virtual const Point3 getSpecular() const = 0;
+    virtual const Point3& getColor() const = 0;
+    virtual const Point3& getDiffuse() const = 0;
+    virtual const Point3& getSpecular() const = 0;
 };
 
 #endif

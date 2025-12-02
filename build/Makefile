@@ -177,6 +177,30 @@ src/implementations/Matrix4.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Matrix4.cpp.s
 .PHONY : src/implementations/Matrix4.cpp.s
 
+src/implementations/Plain.o: src/implementations/Plain.cpp.o
+.PHONY : src/implementations/Plain.o
+
+# target to build an object file
+src/implementations/Plain.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Plain.cpp.o
+.PHONY : src/implementations/Plain.cpp.o
+
+src/implementations/Plain.i: src/implementations/Plain.cpp.i
+.PHONY : src/implementations/Plain.i
+
+# target to preprocess a source file
+src/implementations/Plain.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Plain.cpp.i
+.PHONY : src/implementations/Plain.cpp.i
+
+src/implementations/Plain.s: src/implementations/Plain.cpp.s
+.PHONY : src/implementations/Plain.s
+
+# target to generate assembly for a file
+src/implementations/Plain.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Plain.cpp.s
+.PHONY : src/implementations/Plain.cpp.s
+
 src/implementations/Triangle.o: src/implementations/Triangle.cpp.o
 .PHONY : src/implementations/Triangle.o
 
@@ -264,6 +288,9 @@ help:
 	@echo "... src/implementations/Matrix4.o"
 	@echo "... src/implementations/Matrix4.i"
 	@echo "... src/implementations/Matrix4.s"
+	@echo "... src/implementations/Plain.o"
+	@echo "... src/implementations/Plain.i"
+	@echo "... src/implementations/Plain.s"
 	@echo "... src/implementations/Triangle.o"
 	@echo "... src/implementations/Triangle.i"
 	@echo "... src/implementations/Triangle.s"
