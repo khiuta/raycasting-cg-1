@@ -1,1 +1,3 @@
-build/frames
+build/frames/
+build/CMakeFiles/
+build/CMakeCache.txt

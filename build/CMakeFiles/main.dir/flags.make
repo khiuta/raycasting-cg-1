@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/home/poguel/Documents/raycasting-cg-1/utils
 
-CXX_FLAGS = 
+CXX_FLAGS = -O3 -DNDEBUG -Ofast
 

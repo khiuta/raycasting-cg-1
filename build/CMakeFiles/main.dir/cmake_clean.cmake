@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/main.dir/src/implementations/Matrix4.cpp.o.d"
   "CMakeFiles/main.dir/src/implementations/Plain.cpp.o"
   "CMakeFiles/main.dir/src/implementations/Plain.cpp.o.d"
+  "CMakeFiles/main.dir/src/implementations/Sphere.cpp.o"
+  "CMakeFiles/main.dir/src/implementations/Sphere.cpp.o.d"
   "CMakeFiles/main.dir/src/implementations/Triangle.cpp.o"
   "CMakeFiles/main.dir/src/implementations/Triangle.cpp.o.d"
   "CMakeFiles/main.dir/src/implementations/Vector4.cpp.o"

@@ -27,8 +27,8 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   float r = random_float();
   float g = random_float();
   float b = random_float();
-  this->color = Point3(0.35, 0.35, 0.35);
-  this->dif_color = Point3(0.35, 0.35, 0.35);
+  this->color = Point3(0.5, 0.5, 0.5);
+  this->dif_color = Point3(0.5, 0.5, 0.5);
   this->spec_color = Point3(.1, .1, .1);
 }
 

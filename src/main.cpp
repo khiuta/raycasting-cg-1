@@ -7,6 +7,7 @@
 #include "../utils/ListMesh.hpp"
 #include "../utils/Matrix4.hpp"
 #include "../utils/Plain.hpp"
+#include "../utils/Sphere.hpp"
 #include <cmath>
 #include <algorithm>
 #include <fstream>
@@ -23,12 +24,12 @@ float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
-Point4 lightPos(5, 3, 0);
+Point4 lightPos(20, 10, 0);
 Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
-Point4 lookFrom(0.0f, 5.0f, 10.0f);
-Point4 lookAt(0.0f, 0.0f, -15.0f);
+Point4 lookFrom(0.0f, 5.0f, 15.0f);
+Point4 lookAt(0.0f, 0.0f, 0.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
 
 Vector4 u, v_cam, w;
@@ -155,7 +156,8 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
                                std::vector<std::unique_ptr<Vector4>> &vn, 
                                std::vector<std::unique_ptr<Point4>> &vt, 
                                std::vector<std::unique_ptr<Triangle>> &f,
-                               Point4 &centroid) {
+                               Point4 &centroid,
+                               Sphere &SBB) {
 
     std::ifstream arquivo(nome_arquivo);
 
@@ -176,7 +178,6 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
         ss >> tipo;
         
         if (tipo == "v") {
-            // ... (código de leitura de vértices igual) ...
             float x, y, z;
             if (ss >> x >> y >> z) {
               if(first_vertice){
@@ -196,14 +197,12 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
             }
         } 
         else if (tipo == "vn") {
-            // ... (código de leitura de normais igual) ...
             float x, y, z;
             if (ss >> x >> y >> z) {
                 vn.push_back(std::make_unique<Vector4>(x, y, z));
             }
         }
         else if (tipo == "vt") {
-            // ... (código de leitura de textura igual) ...
             float u, v_coord; 
             if (ss >> u >> v_coord) {
                 vt.push_back(std::make_unique<Point4>(u, v_coord, 0.0f)); 
@@ -211,7 +210,7 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
         }
         else if (tipo == "f") {
             std::string token;
-            std::vector<std::pair<int, int>> face_indices; // {V_idx, VN_idx}
+            std::vector<std::pair<int, int>> face_indices;
 
             while (ss >> token) {
                 face_indices.push_back(get_indices(token));
@@ -249,9 +248,16 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
         }
     }
 
+    float height = max_y - min_y;
+    float width = max_x - min_x;
+    float length = max_z - min_z;
+
     centroid.x = (max_x + min_x)/2;
     centroid.y = (max_y + min_y)/2;
     centroid.z = (max_z + min_z)/2;
+    
+    SBB.center = Point4((max_x+min_x)/2, (max_y+min_y)/2, (max_z+min_z)/2);
+    SBB.radius = std::max(height, std::max(width, length))/2;
     arquivo.close();
 }
 
@@ -267,15 +273,23 @@ float random_float2() {
 
 int main() {
   std::ofstream image("image.ppm");
+  std::string obj_name = "bunny.obj";
+  
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
   std::vector<std::unique_ptr<Point4>> vt;
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
-  ler_arquivo_linha_a_linha("cube.obj", v, vn, vt, f, centroid);
-  std::cout << "Loaded " << f.size() << " triangles on object cube.obj\n";
-  //ListMesh cube(std::move(f), std::move(v), centroid);
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid);
+  Sphere SBB;
+  ler_arquivo_linha_a_linha(obj_name, v, vn, vt, f, centroid, SBB);
+  std::cout << "Loaded " << f.size() << " triangles on object " << obj_name << "\n";
+
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, SBB);
+  cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
+  cube->applyScale(scale(Vector4(45, 45, 45)));
+  world.push_back(std::move(cube));
+
+  #pragma region plains
   Point3 specular_plains(.1, .1, .1);
   Point3 back_wall_col(.9, .3, .5);
   Point3 front_wall_col(.5, .7, 1);
@@ -296,6 +310,7 @@ int main() {
   world.push_back(std::make_unique<Plain>(right_wall));
   world.push_back(std::make_unique<Plain>(ceiling));
   world.push_back(std::make_unique<Plain>(floor));
+  #pragma endregion
 
   w = (lookFrom - lookAt); // Vetor apontando para trás
   w.normalize();
@@ -326,10 +341,12 @@ int main() {
       z = random_float2();
     }
     float theta = (2.0f * 3.14159f * i) / frames;
+    
     float novo_x = lookAt.x + raio * std::sin(theta);
     float novo_z = lookAt.z + raio * std::cos(theta);
+    float novo_y = lookAt.y + altura_camera;
 
-    lookFrom = Point4(novo_x, altura_camera, novo_z);
+    lookFrom = Point4(novo_x, novo_y, novo_z);
 
     w = (lookFrom - lookAt); 
     w.normalize();
@@ -340,13 +357,14 @@ int main() {
     v_cam = cross(w, u);
 
     // transforming the cube
-    cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
-    cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
-    cube->applyTranslate(translate(Vector4(cube->centroid.x, cube->centroid.y, cube->centroid.z)));
-    cube->applyTranslate(translate(Vector4(0, 0, -10.0f)));
+    //cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
+    //cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
+    //cube->applyScale(scale(Vector4(4, 4, 4)));
+    //cube->applyTranslate(translate(Vector4(cube->centroid.x, cube->centroid.y, cube->centroid.z)));
+    //std::cout << cube->centroid.x << " " << cube->centroid.y << " " << cube->centroid.z << "\n";
 
     // putting the transformed cube in the world
-    world.push_back(std::move(cube));
+    //world.push_back(std::move(cube));
 
     // rendering
     if(image.is_open()) {
@@ -362,12 +380,10 @@ int main() {
     std::cout << "Frames rendered: [" << i+1 << "] out of: " << frames << "\n";
 
     // creating a pointer to the transformed cube
-    std::unique_ptr<Object> temp_generic = std::move(world.back());
+    //std::unique_ptr<Object> temp_generic = std::move(world.back());
     // giving the ownership back to cube
-    cube.reset(static_cast<ListMesh*>(temp_generic.release()));
+    //cube.reset(static_cast<ListMesh*>(temp_generic.release()));
     // getting the cube out of world so theres always only one cube
-    world.pop_back();
-    // get the cube back to its original position
-    cube->applyTranslate(translate(Vector4(0, 0, 10.0f)));
+    //world.pop_back();
   }
 }
