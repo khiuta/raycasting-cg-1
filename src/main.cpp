@@ -251,13 +251,16 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
     float height = max_y - min_y;
     float width = max_x - min_x;
     float length = max_z - min_z;
+    Vector4 max_diag = Point4(min_x, min_y, min_z) - Point4(max_x, max_y, max_z);
+    float max_diag_len = max_diag.length();
 
     centroid.x = (max_x + min_x)/2;
     centroid.y = (max_y + min_y)/2;
     centroid.z = (max_z + min_z)/2;
     
     SBB.center = Point4((max_x+min_x)/2, (max_y+min_y)/2, (max_z+min_z)/2);
-    SBB.radius = std::max(height, std::max(width, length))/2;
+    //SBB.radius = std::max(height, std::max(width, length))/2;
+    SBB.radius = max_diag_len/2;
     arquivo.close();
 }
 
@@ -274,7 +277,7 @@ float random_float2() {
 int main() {
   std::ofstream image("image.ppm");
   std::string obj_name = "bunny.obj";
-  
+
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
   std::vector<std::unique_ptr<Point4>> vt;
