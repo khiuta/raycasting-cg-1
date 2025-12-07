@@ -5,16 +5,16 @@
 #include "Object.hpp"
 #include "Triangle.hpp"
 #include "Matrix4.hpp"
-#include "Sphere.hpp"
+#include "AABB.hpp"
 
 class ListMesh : public Object {
   public:
     std::vector<std::unique_ptr<Triangle>> faces;
     std::vector<std::unique_ptr<Point4>> vertices;
     Point4 centroid;
-    Sphere SBB;
+    AABB aabb;
 
-    ListMesh(std::vector<std::unique_ptr<Triangle>> faces, std::vector<std::unique_ptr<Point4>> vertices, Point4 centroid, Sphere SBB);
+    ListMesh(std::vector<std::unique_ptr<Triangle>> faces, std::vector<std::unique_ptr<Point4>> vertices, Point4 centroid, AABB aabb);
 
     bool Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const override;
 

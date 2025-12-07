@@ -8,6 +8,7 @@
 #include "../utils/Matrix4.hpp"
 #include "../utils/Plain.hpp"
 #include "../utils/Sphere.hpp"
+#include "../utils/AABB.hpp"
 #include <cmath>
 #include <algorithm>
 #include <fstream>
@@ -157,7 +158,7 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
                                std::vector<std::unique_ptr<Point4>> &vt, 
                                std::vector<std::unique_ptr<Triangle>> &f,
                                Point4 &centroid,
-                               Sphere &SBB) {
+                               AABB &aabb) {
 
     std::ifstream arquivo(nome_arquivo);
 
@@ -248,19 +249,17 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
         }
     }
 
-    float height = max_y - min_y;
-    float width = max_x - min_x;
-    float length = max_z - min_z;
-    Vector4 max_diag = Point4(min_x, min_y, min_z) - Point4(max_x, max_y, max_z);
-    float max_diag_len = max_diag.length();
-
     centroid.x = (max_x + min_x)/2;
     centroid.y = (max_y + min_y)/2;
     centroid.z = (max_z + min_z)/2;
     
-    SBB.center = Point4((max_x+min_x)/2, (max_y+min_y)/2, (max_z+min_z)/2);
-    //SBB.radius = std::max(height, std::max(width, length))/2;
-    SBB.radius = max_diag_len/2;
+    aabb.min_x = min_x;
+    aabb.max_x = max_x;
+    aabb.min_y = min_y;
+    aabb.max_y = max_y;
+    aabb.min_z = min_z;
+    aabb.max_z = max_z;
+    
     arquivo.close();
 }
 
@@ -276,21 +275,19 @@ float random_float2() {
 
 int main() {
   std::ofstream image("image.ppm");
-  std::string obj_name = "bunny.obj";
+  std::string obj_name = "bunny_low_poly.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
   std::vector<std::unique_ptr<Point4>> vt;
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
-  Sphere SBB;
-  ler_arquivo_linha_a_linha(obj_name, v, vn, vt, f, centroid, SBB);
+  AABB aabb;
+  ler_arquivo_linha_a_linha(obj_name, v, vn, vt, f, centroid, aabb);
   std::cout << "Loaded " << f.size() << " triangles on object " << obj_name << "\n";
 
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, SBB);
-  cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
-  cube->applyScale(scale(Vector4(45, 45, 45)));
-  world.push_back(std::move(cube));
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, aabb);
+  //world.push_back(std::move(cube));
 
   #pragma region plains
   Point3 specular_plains(.1, .1, .1);
@@ -361,13 +358,13 @@ int main() {
 
     // transforming the cube
     //cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
-    //cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
+    cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
     //cube->applyScale(scale(Vector4(4, 4, 4)));
     //cube->applyTranslate(translate(Vector4(cube->centroid.x, cube->centroid.y, cube->centroid.z)));
     //std::cout << cube->centroid.x << " " << cube->centroid.y << " " << cube->centroid.z << "\n";
 
     // putting the transformed cube in the world
-    //world.push_back(std::move(cube));
+    world.push_back(std::move(cube));
 
     // rendering
     if(image.is_open()) {
@@ -383,10 +380,10 @@ int main() {
     std::cout << "Frames rendered: [" << i+1 << "] out of: " << frames << "\n";
 
     // creating a pointer to the transformed cube
-    //std::unique_ptr<Object> temp_generic = std::move(world.back());
+    std::unique_ptr<Object> temp_generic = std::move(world.back());
     // giving the ownership back to cube
-    //cube.reset(static_cast<ListMesh*>(temp_generic.release()));
+    cube.reset(static_cast<ListMesh*>(temp_generic.release()));
     // getting the cube out of world so theres always only one cube
-    //world.pop_back();
+    world.pop_back();
   }
 }

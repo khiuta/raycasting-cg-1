@@ -129,6 +129,30 @@ main/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
+src/implementations/AABB.o: src/implementations/AABB.cpp.o
+.PHONY : src/implementations/AABB.o
+
+# target to build an object file
+src/implementations/AABB.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/AABB.cpp.o
+.PHONY : src/implementations/AABB.cpp.o
+
+src/implementations/AABB.i: src/implementations/AABB.cpp.i
+.PHONY : src/implementations/AABB.i
+
+# target to preprocess a source file
+src/implementations/AABB.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/AABB.cpp.i
+.PHONY : src/implementations/AABB.cpp.i
+
+src/implementations/AABB.s: src/implementations/AABB.cpp.s
+.PHONY : src/implementations/AABB.s
+
+# target to generate assembly for a file
+src/implementations/AABB.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/AABB.cpp.s
+.PHONY : src/implementations/AABB.cpp.s
+
 src/implementations/ListMesh.o: src/implementations/ListMesh.cpp.o
 .PHONY : src/implementations/ListMesh.o
 
@@ -306,6 +330,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... main"
+	@echo "... src/implementations/AABB.o"
+	@echo "... src/implementations/AABB.i"
+	@echo "... src/implementations/AABB.s"
 	@echo "... src/implementations/ListMesh.o"
 	@echo "... src/implementations/ListMesh.i"
 	@echo "... src/implementations/ListMesh.s"
