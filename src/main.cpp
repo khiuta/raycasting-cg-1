@@ -18,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <numbers>
+#include <chrono>
 
 const float wWindow = 4.f, hWindow = 3.f;
 const int nCol = wWindow*200, nLin = hWindow*200;
@@ -239,7 +240,10 @@ void ler_arquivo_linha_a_linha(const std::string& nome_arquivo,
                 if (vn1_idx >= 0 && vn1_idx < vn.size()) {
                     Vector4 normal = *vn[vn1_idx];
                     // Usa o NOVO construtor que aceita a normal
-                    f.push_back(std::make_unique<Triangle>(p1, p2, p3, normal));
+                    auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
+                    Triangle* tri_ptr = new_tri.get();
+                    f.push_back(std::move(new_tri));
+                    aabb.t.push_back(tri_ptr);
                 } else {
                     // Fallback para o construtor antigo (calcula normal automaticamente)
                     // Caso o arquivo OBJ não tenha normais (vn)
@@ -274,7 +278,7 @@ float random_float2() {
 }
 
 int main() {
-  std::ofstream image("image.ppm");
+  //std::ofstream image("image.ppm");
   std::string obj_name = "bunny_low_poly.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
@@ -287,7 +291,7 @@ int main() {
   std::cout << "Loaded " << f.size() << " triangles on object " << obj_name << "\n";
 
   std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, aabb);
-  //world.push_back(std::move(cube));
+  world.push_back(std::move(cube));
 
   #pragma region plains
   Point3 specular_plains(.1, .1, .1);
@@ -328,6 +332,8 @@ int main() {
   float y = random_float2();
   float z = random_float2();
   for(int i = 0; i < frames; i++){
+    auto start = std::chrono::high_resolution_clock::now();
+
     std::string image_name = "frames/";
     if(i < 10) image_name += "frame_00" + std::to_string(i);
     else if(i < 100) image_name += "frame_0" + std::to_string(i);
@@ -358,13 +364,13 @@ int main() {
 
     // transforming the cube
     //cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
-    cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
+    //cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
     //cube->applyScale(scale(Vector4(4, 4, 4)));
     //cube->applyTranslate(translate(Vector4(cube->centroid.x, cube->centroid.y, cube->centroid.z)));
     //std::cout << cube->centroid.x << " " << cube->centroid.y << " " << cube->centroid.z << "\n";
 
     // putting the transformed cube in the world
-    world.push_back(std::move(cube));
+    //world.push_back(std::move(cube));
 
     // rendering
     if(image.is_open()) {
@@ -377,13 +383,17 @@ int main() {
       image.close();
     }
 
-    std::cout << "Frames rendered: [" << i+1 << "] out of: " << frames << "\n";
+    auto stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> elapsed = stop - start;
+
+    std::cout << "Frame " << i+1 << " out of " << frames << " rendered in " << elapsed.count() << " seconds.\n";
 
     // creating a pointer to the transformed cube
-    std::unique_ptr<Object> temp_generic = std::move(world.back());
+    //std::unique_ptr<Object> temp_generic = std::move(world.back());
     // giving the ownership back to cube
-    cube.reset(static_cast<ListMesh*>(temp_generic.release()));
+    //cube.reset(static_cast<ListMesh*>(temp_generic.release()));
     // getting the cube out of world so theres always only one cube
-    world.pop_back();
+    //world.pop_back();
   }
 }
