@@ -17,7 +17,7 @@ class ListMesh : public Object {
     ListMesh(std::vector<std::unique_ptr<Triangle>> faces, std::vector<std::unique_ptr<Point4>> vertices, Point4 centroid, AABB aabb);
 
     bool Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const override;
-    AABB recursive_bvh(const Point4 &origin, const Vector4& dir, const AABB &aabb, int divs) const;
+    const AABB* recursive_bvh(const Point4 &origin, const Vector4& dir, const AABB *aabb) const;
 
 
     void applyTranslate(const Matrix4 &m);

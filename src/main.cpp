@@ -129,142 +129,140 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
   }
 }
 
-std::pair<int, int> get_indices(const std::string& token) {
-    size_t first_slash = token.find('/');
-    size_t second_slash = token.find('/', first_slash + 1);
-
-    int v_idx = 0;
-    int vn_idx = 0;
-
-    // Extrai o índice do Vértice (V)
-    if (first_slash != std::string::npos) {
-        v_idx = std::stoi(token.substr(0, first_slash));
-    } else {
-        // Se não houver barras, assume que é apenas o índice do vértice
-        v_idx = std::stoi(token);
+void fill_xyz(std::string line, float &x, float &y, float &z){
+  bool is_negative = false;
+  int control = 0; // to control if the next number is for x, y or z (0 = x, 1 = y, 2 = z)
+  // start at 2 because we already know it starts with v and blank
+  for(int i = 2; i < line.size(); i++){
+    if(line[i] == '-') is_negative = true;
+    // if its a digit
+    else if(line[i] >= 48 && line[i] <= 57){
+      int k = i;
+      std::string digit;
+      if(is_negative) digit += '-';
+      // iterate throughout the digits
+      while(line[k] >= 48 && line[k] <= 57 || line[k] == '.'){
+        digit += line[k];
+        k++;
+      }
+      // jump i to where k stopped to avoid looping the same number
+      i += k-i;
+      // reset the negative control var
+      is_negative = false;
+      // check whether this was x, y or z
+      if(control == 0) x = std::stof(digit);
+      else if(control == 1) y = std::stof(digit);
+      else if(control == 2) z = std::stof(digit);
+      //advance the control var
+      control++;
     }
-    
-    // Extrai o índice da Normal (N)
-    if (second_slash != std::string::npos) {
-        // Se houver uma segunda barra, o token é V/VT/N ou V//N
-        vn_idx = std::stoi(token.substr(second_slash + 1));
-    }
-    
-    return {v_idx, vn_idx};
+  }  
 }
 
-void ler_arquivo_linha_a_linha(const std::string& nome_arquivo, 
-                               std::vector<std::unique_ptr<Point4>> &v,
-                               std::vector<std::unique_ptr<Vector4>> &vn, 
-                               std::vector<std::unique_ptr<Point4>> &vt, 
-                               std::vector<std::unique_ptr<Triangle>> &f,
-                               Point4 &centroid,
-                               AABB &aabb) {
+void read_obj_file(const std::string& filename, 
+                   std::vector<std::unique_ptr<Point4>> &v,
+                   std::vector<std::unique_ptr<Vector4>> &vn,
+                   std::vector<std::unique_ptr<Point4>> &vt,
+                   std::vector<std::unique_ptr<Triangle>> &f,
+                   Point4 &centroid,
+                   AABB &aabb){
 
-    std::ifstream arquivo(nome_arquivo);
+  std::ifstream file(filename);
 
-    if (!arquivo.is_open()) {
-        std::cerr << "ERRO: Não foi possível abrir o arquivo " << nome_arquivo << std::endl;
-        return;
+  if(!file.is_open()) {
+    std::cerr << "ERROR: There was a problem opening the file " << filename << ".\n";
+    return;
+  }
+
+  std::string line;
+
+  float max_x, min_x, max_y, min_y, max_z, min_z;
+  bool first_vertice = true;
+
+  while(std::getline(file, line)){
+    if(line[0] == 'v'){
+      // if its just a vertex
+      if(line[1] == ' '){
+        float x, y, z;
+        fill_xyz(line, x, y, z);
+        if(first_vertice){
+          min_x = max_x = x;
+          min_y = max_y = y;
+          min_z = max_z = z;
+          first_vertice = false;
+        } else {
+          if(x < min_x) min_x = x;
+          if(x > max_x) max_x = x;
+          if(y < min_y) min_y = y;
+          if(y > max_y) max_y = y;
+          if(z < min_z) min_z = z;
+          if(z > max_z) max_z = z;
+        }
+        v.push_back(std::make_unique<Point4>(x, y, z, 1));
+      } else if(line[1] == 'n'){
+        // if its a vertex normal
+        float x, y, z;
+        fill_xyz(line, x, y, z);
+        vn.push_back(std::make_unique<Vector4>(x, y, z, 0));
+      } else if(line[1] == 't'){
+        // if its a texture vertex
+      }
+    } else if(line[0] == 'f'){
+      // to check if we're reading point 1, 2 or 3 of the triangle
+      int point_control = 0;
+      // to check if we're reading a vertex, texture vertex or vertex normal
+      int vertex_control = 0;
+      int vertex_indices[3] = {0, 0, 0};
+      int tex_vertex_indices[3] = {0, 0, 0};
+      int nor_vertex_indices[3] = {0, 0, 0};
+      // skip 2 because it starts with f and blank
+      for(int i = 2; i < line.size(); i++){
+        if(line[i] == ' ') {
+            point_control++; 
+            vertex_control = 0;
+        }
+        if(line[i] == '/') vertex_control++;
+        // if its a digit
+        if(line[i] >= 48 && line[i] <= 57){
+          int k = i;
+          std::string digit;
+          // iterate throughout the digit
+          while(line[k] >= 48 && line[k] <= 57){
+            digit += line[k];
+            k++;
+          }
+          // check if it was a vertex, texture vertex or vertex normal
+          if(vertex_control == 0) vertex_indices[point_control] = std::stoi(digit) - 1;
+          else if(vertex_control == 1) tex_vertex_indices[point_control] = std::stoi(digit) - 1;
+          else if(vertex_control == 2) nor_vertex_indices[point_control] = std::stoi(digit) - 1;
+          i = k - 1;
+        }
+      }
+
+      Point4 p1 = *v[vertex_indices[0]];
+      Point4 p2 = *v[vertex_indices[1]];
+      Point4 p3 = *v[vertex_indices[2]];
+      Vector4 normal = *vn[nor_vertex_indices[0]];
+
+      auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
+      Triangle* tri_ptr = new_tri.get();
+      f.push_back(std::move(new_tri));
+      aabb.t.push_back(tri_ptr);
     }
+  }
 
-    std::string linha;
-    float max_x, min_x, max_y, min_y, max_z, min_z;
-    bool first_vertice = true;
+  centroid.x = (max_x + min_x)/2;
+  centroid.y = (max_y + min_y)/2;
+  centroid.z = (max_z + min_z)/2;
+  
+  aabb.min_x = min_x;
+  aabb.max_x = max_x;
+  aabb.min_y = min_y;
+  aabb.max_y = max_y;
+  aabb.min_z = min_z;
+  aabb.max_z = max_z;
 
-    while (std::getline(arquivo, linha)) {
-        if (linha.empty() || linha[0] == '#' || linha[0] == 'm' || linha[0] == 'u' || linha[0] == 's' || linha[0] == 'o') continue; 
-
-        std::stringstream ss(linha);
-        std::string tipo;
-        ss >> tipo;
-        
-        if (tipo == "v") {
-            float x, y, z;
-            if (ss >> x >> y >> z) {
-              if(first_vertice){
-                max_x = min_x = x;
-                max_y = min_y = y;
-                max_z = min_z = z;
-                first_vertice = false;
-              } else {
-                if(x < min_x) min_x = x;
-                if(x > max_x) max_x = x;
-                if(y < min_y) min_y = y;
-                if(y > max_y) max_y = y;
-                if(z < min_z) min_z = z;
-                if(z > max_z) max_z = z;
-              }
-                v.push_back(std::make_unique<Point4>(x, y, z));
-            }
-        } 
-        else if (tipo == "vn") {
-            float x, y, z;
-            if (ss >> x >> y >> z) {
-                vn.push_back(std::make_unique<Vector4>(x, y, z));
-            }
-        }
-        else if (tipo == "vt") {
-            float u, v_coord; 
-            if (ss >> u >> v_coord) {
-                vt.push_back(std::make_unique<Point4>(u, v_coord, 0.0f)); 
-            }
-        }
-        else if (tipo == "f") {
-            std::string token;
-            std::vector<std::pair<int, int>> face_indices;
-
-            while (ss >> token) {
-                face_indices.push_back(get_indices(token));
-            }
-            
-            // Cria triângulos
-            for (size_t i = 1; i < face_indices.size() - 1; ++i) {
-                // Índices dos vértices (base 0)
-                int v1_idx = face_indices[0].first - 1;
-                int v2_idx = face_indices[i].first - 1;
-                int v3_idx = face_indices[i+1].first - 1;
-
-                // Índices das normais (base 0)
-                // Nota: Se o arquivo não tiver normais, vn_idx será -1 ou inválido.
-                int vn1_idx = face_indices[0].second - 1;
-                // int vn2_idx = face_indices[i].second - 1;   // Para smooth shading futuro
-                // int vn3_idx = face_indices[i+1].second - 1; // Para smooth shading futuro
-
-                Point4 p1 = *v[v1_idx];
-                Point4 p2 = *v[v2_idx];
-                Point4 p3 = *v[v3_idx];
-                
-                // --- ATUALIZAÇÃO AQUI ---
-                // Verifica se existe uma normal válida para usar
-                if (vn1_idx >= 0 && vn1_idx < vn.size()) {
-                    Vector4 normal = *vn[vn1_idx];
-                    // Usa o NOVO construtor que aceita a normal
-                    auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
-                    Triangle* tri_ptr = new_tri.get();
-                    f.push_back(std::move(new_tri));
-                    aabb.t.push_back(tri_ptr);
-                } else {
-                    // Fallback para o construtor antigo (calcula normal automaticamente)
-                    // Caso o arquivo OBJ não tenha normais (vn)
-                    //f.push_back(std::make_unique<Triangle>(p1, p2, p3));
-                }
-            }
-        }
-    }
-
-    centroid.x = (max_x + min_x)/2;
-    centroid.y = (max_y + min_y)/2;
-    centroid.z = (max_z + min_z)/2;
-    
-    aabb.min_x = min_x;
-    aabb.max_x = max_x;
-    aabb.min_y = min_y;
-    aabb.max_y = max_y;
-    aabb.min_z = min_z;
-    aabb.max_z = max_z;
-    
-    arquivo.close();
+  return;
 }
 
 float random_float2() {
@@ -278,8 +276,7 @@ float random_float2() {
 }
 
 int main() {
-  //std::ofstream image("image.ppm");
-  std::string obj_name = "bunny_low_poly.obj";
+  std::string obj_name = "cube.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
@@ -287,10 +284,11 @@ int main() {
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   AABB aabb;
-  ler_arquivo_linha_a_linha(obj_name, v, vn, vt, f, centroid, aabb);
+  read_obj_file(obj_name, v, vn, vt, f, centroid, aabb);
   std::cout << "Loaded " << f.size() << " triangles on object " << obj_name << "\n";
 
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, aabb);
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, std::move(aabb));
+  cube->aabb.buildBVH(10);
   world.push_back(std::move(cube));
 
   #pragma region plains
@@ -331,6 +329,7 @@ int main() {
   float x = random_float2();
   float y = random_float2();
   float z = random_float2();
+  auto full_start = std::chrono::high_resolution_clock::now();
   for(int i = 0; i < frames; i++){
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -396,4 +395,7 @@ int main() {
     // getting the cube out of world so theres always only one cube
     //world.pop_back();
   }
+  auto full_stop = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = full_stop - full_start;
+  std::cout << elapsed.count() << " seconds to render " << frames << " frames.\n";
 }

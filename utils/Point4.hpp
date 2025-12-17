@@ -22,4 +22,12 @@ inline Point4 operator+(const Vector4 &v, const Point4 &p){
 inline Vector4 operator-(const Point4& p1, const Point4 &p2){
     return { p1.x - p2.x, p1.y - p2.y, p1.z - p2.z, p1.w - p2.w };
 }
+// point + point
+inline Point4 operator+(const Point4& p1, const Point4& p2){
+    return { p1.x + p2.x, p1.y + p2.y, p1.z + p2.z, 1 };
+}
+// point / float
+inline Point4 operator/(const Point4& p1, float f){
+    return { p1.x / f, p1.y / f, p1.z / f, 1 };
+}
 #endif

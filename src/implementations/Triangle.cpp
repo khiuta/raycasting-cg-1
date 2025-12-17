@@ -27,9 +27,9 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   float r = random_float();
   float g = random_float();
   float b = random_float();
-  this->color = Point3(0.5, 0.5, 0.5);
-  this->dif_color = Point3(0.5, 0.5, 0.5);
-  this->spec_color = Point3(.1, .1, .1);
+  this->color = Point3(r, g, b);
+  this->dif_color = Point3(r, g, b);
+  this->spec_color = Point3(.7, .7, .7);
 }
 
 bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const {
