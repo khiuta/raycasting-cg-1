@@ -32,6 +32,31 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   this->spec_color = Point3(.7, .7, .7);
 }
 
+Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const Vector4 &n, const Point3 &vt1, const Point3 &vt2, const Point3 &vt3){
+  this->p1 = p1;
+  this->p2 = p2;
+  this->p3 = p3;
+  this->vt1 = vt1;
+  this->vt2 = vt2;
+  this->vt3 = vt3;
+  this->normal = n;
+  this->normal.normalize();
+  Vector4 r1 = p2 - p1;
+  Vector4 r2 = p3 - p1;
+  this->area = cross(r1, r2).length()/2;
+  Vector4 e2 = p3 - p2;
+  Vector4 e3 = p3 - p1;
+  this->e1 = r1;
+  this->e2 = e2;
+  this->e3 = e3;
+  float r = random_float();
+  float g = random_float();
+  float b = random_float();
+  this->color = Point3(r, g, b);
+  this->dif_color = Point3(r, g, b);
+  this->spec_color = Point3(.7, .7, .7);
+}
+
 bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const {
   if(dot(normal, dir) >= 0) return false;
   float denominator = dot(this->normal, dir);
@@ -63,6 +88,13 @@ bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
       hr.t = t;
       hr.p_int = p_int;
       hr.obj_ptr = this;
+
+      Point3 uv;
+      uv.x = c3*vt1.x + c1*vt2.x + c2*vt3.x;
+      uv.y = c3*vt1.y + c1*vt2.y + c2*vt3.y;
+
+      hr.uv = uv;
+      hr.texture = this->mesh->texture;
     } else return false;
 
     return true;

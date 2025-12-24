@@ -44,6 +44,12 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
 }
 
 Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
+  if(rec.texture.size() > 0) {
+    int int_u = (int)std::round(rec.uv.x);
+    int int_v = (int)std::round(rec.uv.y);
+
+    Point3 tex_color();
+  }
   Point3 obj_color = rec.obj_ptr->getColor();
   Point3 mat_dif = rec.obj_ptr->getDiffuse();
   Point3 mat_spec = rec.obj_ptr->getSpecular();
@@ -132,7 +138,7 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
 void fill_xyz(std::string line, float &x, float &y, float &z){
   bool is_negative = false;
   int control = 0; // to control if the next number is for x, y or z (0 = x, 1 = y, 2 = z)
-  // start at 2 because we already know it starts with v and blank
+  // start at 2 because we already know it starts with v and something else that isn't a digit
   for(int i = 2; i < line.size(); i++){
     if(line[i] == '-') is_negative = true;
     // if its a digit
@@ -162,10 +168,11 @@ void fill_xyz(std::string line, float &x, float &y, float &z){
 void read_obj_file(const std::string& filename, 
                    std::vector<std::unique_ptr<Point4>> &v,
                    std::vector<std::unique_ptr<Vector4>> &vn,
-                   std::vector<std::unique_ptr<Point4>> &vt,
+                   std::vector<std::unique_ptr<Point3>> &vt,
                    std::vector<std::unique_ptr<Triangle>> &f,
                    Point4 &centroid,
-                   AABB &aabb){
+                   AABB &aabb,
+                   ListMesh *mesh){
 
   std::ifstream file(filename);
 
@@ -206,15 +213,19 @@ void read_obj_file(const std::string& filename,
         vn.push_back(std::make_unique<Vector4>(x, y, z, 0));
       } else if(line[1] == 't'){
         // if its a texture vertex
+        float x, y, z = 0;
+        // it supports just x and y, and z wont be used or filled
+        fill_xyz(line, x, y, z);
+        vt.push_back(std::make_unique<Point3>(x, y, z));
       }
     } else if(line[0] == 'f'){
       // to check if we're reading point 1, 2 or 3 of the triangle
       int point_control = 0;
       // to check if we're reading a vertex, texture vertex or vertex normal
       int vertex_control = 0;
-      int vertex_indices[3] = {0, 0, 0};
-      int tex_vertex_indices[3] = {0, 0, 0};
-      int nor_vertex_indices[3] = {0, 0, 0};
+      int vertex_indices[4] = {0, 0, 0, -1};
+      int tex_vertex_indices[4] = {0, 0, 0, 0};
+      int nor_vertex_indices[4] = {0, 0, 0, 0};
       // skip 2 because it starts with f and blank
       for(int i = 2; i < line.size(); i++){
         if(line[i] == ' ') {
@@ -239,15 +250,55 @@ void read_obj_file(const std::string& filename,
         }
       }
 
-      Point4 p1 = *v[vertex_indices[0]];
-      Point4 p2 = *v[vertex_indices[1]];
-      Point4 p3 = *v[vertex_indices[2]];
-      Vector4 normal = *vn[nor_vertex_indices[0]];
+      if(vertex_indices[3] != -1){
+        Point4 p1 = *v[vertex_indices[0]];
+        Point4 p2 = *v[vertex_indices[1]];
+        Point4 p3 = *v[vertex_indices[2]];
+        Point4 p4 = *v[vertex_indices[3]];
+        Vector4 normal = *vn[nor_vertex_indices[0]];
 
-      auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
-      Triangle* tri_ptr = new_tri.get();
-      f.push_back(std::move(new_tri));
-      aabb.t.push_back(tri_ptr);
+        if(vt.size() > 0){
+          Point3 vt1 = *vt[tex_vertex_indices[0]];
+          Point3 vt2 = *vt[tex_vertex_indices[1]];
+          Point3 vt3 = *vt[tex_vertex_indices[2]];
+          Point3 vt4 = *vt[tex_vertex_indices[3]];
+
+          auto new_tri_1 = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
+          auto new_tri_2 = std::make_unique<Triangle>(p1, p3, p4, normal, vt1, vt3, vt4);
+          Triangle* tri_ptr_1 = new_tri_1.get();
+          Triangle* tri_ptr_2 = new_tri_2.get();
+          new_tri_1->SetMesh(mesh);
+          new_tri_2->SetMesh(mesh);
+
+          f.push_back(std::move(new_tri_1));
+          f.push_back(std::move(new_tri_2));
+          aabb.t.push_back(tri_ptr_1);
+          aabb.t.push_back(tri_ptr_2);
+        } else {
+          auto new_tri_1 = std::make_unique<Triangle>(p1, p2, p3, normal);
+          auto new_tri_2 = std::make_unique<Triangle>(p1, p3, p4, normal);
+          Triangle* tri_ptr_1 = new_tri_1.get();
+          Triangle* tri_ptr_2 = new_tri_2.get();
+
+          new_tri_1->SetMesh(mesh);
+          new_tri_2->SetMesh(mesh);
+
+          f.push_back(std::move(new_tri_1));
+          f.push_back(std::move(new_tri_2));
+          aabb.t.push_back(tri_ptr_1);
+          aabb.t.push_back(tri_ptr_2);
+        }
+      } else {
+        Point4 p1 = *v[vertex_indices[0]];
+        Point4 p2 = *v[vertex_indices[1]];
+        Point4 p3 = *v[vertex_indices[2]];
+        Vector4 normal = *vn[nor_vertex_indices[0]];
+
+        auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
+        Triangle* tri_ptr = new_tri.get();
+        f.push_back(std::move(new_tri));
+        aabb.t.push_back(tri_ptr);
+      }
     }
   }
 
@@ -276,19 +327,21 @@ float random_float2() {
 }
 
 int main() {
-  std::string obj_name = "cube.obj";
+  std::string obj_name = "cube_nt.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
-  std::vector<std::unique_ptr<Point4>> vt;
+  std::vector<std::unique_ptr<Point3>> vt;
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   AABB aabb;
-  read_obj_file(obj_name, v, vn, vt, f, centroid, aabb);
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/obamium.ppm");
+  read_obj_file(obj_name, v, vn, vt, f, centroid, aabb, cube.get());
   std::cout << "Loaded " << f.size() << " triangles on object " << obj_name << "\n";
 
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, std::move(aabb));
+  //std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, std::move(aabb), "textures/obamium.ppm");
   cube->aabb.buildBVH(10);
+  cube->texture.loadTexture();
   world.push_back(std::move(cube));
 
   #pragma region plains

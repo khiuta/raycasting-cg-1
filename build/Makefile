@@ -249,6 +249,30 @@ src/implementations/Sphere.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Sphere.cpp.s
 .PHONY : src/implementations/Sphere.cpp.s
 
+src/implementations/Texture.o: src/implementations/Texture.cpp.o
+.PHONY : src/implementations/Texture.o
+
+# target to build an object file
+src/implementations/Texture.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Texture.cpp.o
+.PHONY : src/implementations/Texture.cpp.o
+
+src/implementations/Texture.i: src/implementations/Texture.cpp.i
+.PHONY : src/implementations/Texture.i
+
+# target to preprocess a source file
+src/implementations/Texture.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Texture.cpp.i
+.PHONY : src/implementations/Texture.cpp.i
+
+src/implementations/Texture.s: src/implementations/Texture.cpp.s
+.PHONY : src/implementations/Texture.s
+
+# target to generate assembly for a file
+src/implementations/Texture.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Texture.cpp.s
+.PHONY : src/implementations/Texture.cpp.s
+
 src/implementations/Triangle.o: src/implementations/Triangle.cpp.o
 .PHONY : src/implementations/Triangle.o
 
@@ -345,6 +369,9 @@ help:
 	@echo "... src/implementations/Sphere.o"
 	@echo "... src/implementations/Sphere.i"
 	@echo "... src/implementations/Sphere.s"
+	@echo "... src/implementations/Texture.o"
+	@echo "... src/implementations/Texture.i"
+	@echo "... src/implementations/Texture.s"
 	@echo "... src/implementations/Triangle.o"
 	@echo "... src/implementations/Triangle.i"
 	@echo "... src/implementations/Triangle.s"

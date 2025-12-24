@@ -1,5 +1,7 @@
 #ifndef HITRECORD
 #define HITRECORD
+#include <string>
+#include "Texture.hpp"
 
 class Object;
 
@@ -8,6 +10,8 @@ struct HitRecord {
   Point4 p_int;
   Vector4 normal;
   const Object *obj_ptr;
+  Point3 uv;
+  Texture texture;
 };
 
 #endif
