@@ -2,11 +2,12 @@
 #define AABB_HPP
 #include "Point4.hpp"
 #include "Vector4.hpp"
-#include "Triangle.hpp"
+#include "HitRecord.hpp"
 #include <vector>
 #include <memory>
 
 struct BVH;
+class Triangle;
 
 class AABB {
   public:

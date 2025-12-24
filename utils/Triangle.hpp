@@ -6,8 +6,7 @@
 #include <random>
 #include <chrono>
 #include <string>
-
-class ListMesh;
+#include "ListMesh.hpp"
 
 class Triangle : public Object {
   public:

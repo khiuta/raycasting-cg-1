@@ -1,6 +1,7 @@
 #ifndef HITRECORD
 #define HITRECORD
 #include <string>
+#include "Point3.hpp"
 #include "Texture.hpp"
 
 class Object;

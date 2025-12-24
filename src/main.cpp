@@ -44,11 +44,12 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
 }
 
 Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
-  if(rec.texture.size() > 0) {
+  if(rec.texture.filename.size() > 0) {
     int int_u = (int)std::round(rec.uv.x);
     int int_v = (int)std::round(rec.uv.y);
 
-    Point3 tex_color();
+    Point3 tex_color(rec.texture.colors[int_u][int_v][0], rec.texture.colors[int_u][int_v][1], rec.texture.colors[int_u][int_v][2]);
+    return tex_color;
   }
   Point3 obj_color = rec.obj_ptr->getColor();
   Point3 mat_dif = rec.obj_ptr->getDiffuse();
@@ -335,7 +336,7 @@ int main() {
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   AABB aabb;
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/obamium.ppm");
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/obamium2.ppm");
   read_obj_file(obj_name, v, vn, vt, f, centroid, aabb, cube.get());
   std::cout << "Loaded " << f.size() << " triangles on object " << obj_name << "\n";
 

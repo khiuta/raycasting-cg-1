@@ -3,10 +3,11 @@
 #include <vector>
 #include <memory>
 #include "Object.hpp"
-#include "Triangle.hpp"
 #include "Matrix4.hpp"
 #include "AABB.hpp"
 #include "Texture.hpp"
+
+class Triangle;
 
 class ListMesh : public Object {
   public:
