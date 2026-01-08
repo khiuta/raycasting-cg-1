@@ -15,7 +15,6 @@ void Texture::loadTexture(){
   if(filename.size() == 0) return;
 
   std::ifstream file(filename);
-  std::cout << filename << "\n";
 
   if(!file.is_open()){
     std::cout << "There was an error loading the texture: " << filename << ".\n";

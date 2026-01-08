@@ -42,15 +42,14 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
 }
 
 Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
-  if(rec.texture->filename.size() > 0) {
+  if(rec.texture != nullptr) {
     int int_u = rec.texture->width * rec.uv.x;
     int int_v = rec.texture->height * rec.uv.y;
-    std::cout << rec.texture->width << " " << rec.texture->height << "\n";
 
-    // float r = std::get<0>(rec.texture->colors[int_u][int_v]) / 255;
-    // float g = std::get<1>(rec.texture->colors[int_u][int_v]) / 255;
-    // float b = std::get<2>(rec.texture->colors[int_u][int_v]) / 255;
-    Point3 tex_color(1, 1, 1);
+    float r = std::get<0>(rec.texture->colors[int_u][int_v]) / 255;
+    float g = std::get<1>(rec.texture->colors[int_u][int_v]) / 255;
+    float b = std::get<2>(rec.texture->colors[int_u][int_v]) / 255;
+    Point3 tex_color(r, g, b);
 
     return tex_color;
   }

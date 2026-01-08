@@ -17,8 +17,9 @@ class ListMesh : public Object {
     AABB aabb;
     Texture *texture = new Texture();
 
+    ListMesh();
     ListMesh(const std::string &filename);
-    ListMesh(std::vector<std::unique_ptr<Triangle>> faces, std::vector<std::unique_ptr<Point4>> vertices, Point4 centroid, AABB aabb, const std::string &filename);
+    ListMesh(std::vector<std::unique_ptr<Triangle>> faces, std::vector<std::unique_ptr<Point4>> vertices, Point4 centroid, AABB aabb);
 
     bool Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const override;
 
