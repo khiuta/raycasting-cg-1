@@ -12,7 +12,7 @@ struct HitRecord {
   Vector4 normal;
   const Object *obj_ptr;
   Point3 uv;
-  Texture texture;
+  Texture *texture;
 };
 
 #endif

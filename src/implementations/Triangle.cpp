@@ -1,4 +1,5 @@
 #include "../../utils/Triangle.hpp"
+#include <iostream>
 
 float random_float() {
     static std::mt19937 generator(

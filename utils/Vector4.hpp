@@ -1,6 +1,7 @@
 #ifndef VECTOR4
 #define VECTOR4
 #include <cmath>
+
 class Point4;
 class Matrix4;
 

@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/main.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/main.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/main.cpp",
+  "output": "CMakeFiles/main.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/ListMesh.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/ListMesh.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/ListMesh.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/ListMesh.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/Triangle.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/Triangle.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/Triangle.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/Triangle.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/Matrix4.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/Matrix4.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/Matrix4.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/Matrix4.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/Vector4.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/Vector4.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/Vector4.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/Vector4.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/Plain.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/Plain.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/Plain.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/Plain.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/Sphere.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/Sphere.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/Sphere.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/Sphere.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/AABB.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/AABB.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/AABB.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/AABB.cpp.o"
+},
+{
+  "directory": "/home/poguel/Documents/raycasting-cg-1/build",
+  "command": "/usr/bin/c++  -I/home/poguel/Documents/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -o CMakeFiles/main.dir/src/implementations/Texture.cpp.o -c /home/poguel/Documents/raycasting-cg-1/src/implementations/Texture.cpp",
+  "file": "/home/poguel/Documents/raycasting-cg-1/src/implementations/Texture.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/Texture.cpp.o"
+}
+]

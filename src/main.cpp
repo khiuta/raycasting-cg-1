@@ -5,9 +5,7 @@
 #include "../utils/Object.hpp"
 #include "../utils/HitRecord.hpp"
 #include "../utils/ListMesh.hpp"
-#include "../utils/Matrix4.hpp"
 #include "../utils/Plain.hpp"
-#include "../utils/Sphere.hpp"
 #include "../utils/AABB.hpp"
 #include <cmath>
 #include <algorithm>
@@ -44,19 +42,25 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
 }
 
 Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
-  if(rec.texture.filename.size() > 0) {
-    int int_u = (int)std::round(rec.uv.x);
-    int int_v = (int)std::round(rec.uv.y);
+  if(rec.texture->filename.size() > 0) {
+    int int_u = rec.texture->width * rec.uv.x;
+    int int_v = rec.texture->height * rec.uv.y;
+    std::cout << rec.texture->width << " " << rec.texture->height << "\n";
 
-    Point3 tex_color(rec.texture.colors[int_u][int_v][0], rec.texture.colors[int_u][int_v][1], rec.texture.colors[int_u][int_v][2]);
+    // float r = std::get<0>(rec.texture->colors[int_u][int_v]) / 255;
+    // float g = std::get<1>(rec.texture->colors[int_u][int_v]) / 255;
+    // float b = std::get<2>(rec.texture->colors[int_u][int_v]) / 255;
+    Point3 tex_color(1, 1, 1);
+
     return tex_color;
   }
+
   Point3 obj_color = rec.obj_ptr->getColor();
   Point3 mat_dif = rec.obj_ptr->getDiffuse();
   Point3 mat_spec = rec.obj_ptr->getSpecular();
 
   Point3 amb_color(obj_color.x*amb_light.x, obj_color.y*amb_light.y, obj_color.z*amb_light.z);
-  
+
   Vector4 light_dir = light_pos - rec.p_int;
   float dist_to_light = light_dir.length();
   light_dir.normalize();
@@ -100,8 +104,8 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
 }
 
 void raycast(std::ofstream &image, int lin_start, int col_start, int width, int height) {
-  for(int l = lin_start; l < lin_start+height; l++){
-    for(int c = col_start; c < col_start+width; c++){
+  for(int l = lin_start; l < height; l++){
+    for(int c = col_start; c < width; c++){
       float x, y;
       convertDisplayToWindow(c, l, x, y);
 
@@ -126,7 +130,7 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
         int r_int = (int)(final_color.x * 255);
         int g_int = (int)(final_color.y * 255);
         int b_int = (int)(final_color.z * 255);
-        
+
         image << r_int << " " << g_int << " " << b_int << " ";
       } else {
         image << 100 << " " << 100 << " " << 100 << " ";
@@ -163,10 +167,10 @@ void fill_xyz(std::string line, float &x, float &y, float &z){
       //advance the control var
       control++;
     }
-  }  
+  }
 }
 
-void read_obj_file(const std::string& filename, 
+void read_obj_file(const std::string& filename,
                    std::vector<std::unique_ptr<Point4>> &v,
                    std::vector<std::unique_ptr<Vector4>> &vn,
                    std::vector<std::unique_ptr<Point3>> &vt,
@@ -230,7 +234,7 @@ void read_obj_file(const std::string& filename,
       // skip 2 because it starts with f and blank
       for(int i = 2; i < line.size(); i++){
         if(line[i] == ' ') {
-            point_control++; 
+            point_control++;
             vertex_control = 0;
         }
         if(line[i] == '/') vertex_control++;
@@ -251,6 +255,7 @@ void read_obj_file(const std::string& filename,
         }
       }
 
+      // if the faces are not triangulated
       if(vertex_indices[3] != -1){
         Point4 p1 = *v[vertex_indices[0]];
         Point4 p2 = *v[vertex_indices[1]];
@@ -268,6 +273,7 @@ void read_obj_file(const std::string& filename,
           auto new_tri_2 = std::make_unique<Triangle>(p1, p3, p4, normal, vt1, vt3, vt4);
           Triangle* tri_ptr_1 = new_tri_1.get();
           Triangle* tri_ptr_2 = new_tri_2.get();
+
           new_tri_1->SetMesh(mesh);
           new_tri_2->SetMesh(mesh);
 
@@ -290,6 +296,7 @@ void read_obj_file(const std::string& filename,
           aabb.t.push_back(tri_ptr_2);
         }
       } else {
+        // if the faces are triangulated
         Point4 p1 = *v[vertex_indices[0]];
         Point4 p2 = *v[vertex_indices[1]];
         Point4 p3 = *v[vertex_indices[2]];
@@ -297,6 +304,9 @@ void read_obj_file(const std::string& filename,
 
         auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
         Triangle* tri_ptr = new_tri.get();
+
+        new_tri->SetMesh(mesh);
+
         f.push_back(std::move(new_tri));
         aabb.t.push_back(tri_ptr);
       }
@@ -306,7 +316,7 @@ void read_obj_file(const std::string& filename,
   centroid.x = (max_x + min_x)/2;
   centroid.y = (max_y + min_y)/2;
   centroid.z = (max_z + min_z)/2;
-  
+
   aabb.min_x = min_x;
   aabb.max_x = max_x;
   aabb.min_y = min_y;
@@ -321,14 +331,14 @@ float random_float2() {
   static std::mt19937 generator(
     std::chrono::high_resolution_clock::now().time_since_epoch().count()
   );
-  
+
   static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-  
+
   return distribution(generator);
 }
 
 int main() {
-  std::string obj_name = "cube_nt.obj";
+  std::string obj_name = "cube.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
@@ -336,13 +346,16 @@ int main() {
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   AABB aabb;
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/obamium2.ppm");
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/square_swirls.ppm");
   read_obj_file(obj_name, v, vn, vt, f, centroid, aabb, cube.get());
-  std::cout << "Loaded " << f.size() << " triangles on object " << obj_name << "\n";
+  cube->aabb = std::move(aabb);
+  cube->faces = std::move(f);
+  cube->vertices = std::move(v);
+  cube->centroid = std::move(centroid);
+  std::cout << "Loaded " << cube->faces.size() << " triangles on object " << obj_name << "\n";
 
   //std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, std::move(aabb), "textures/obamium.ppm");
   cube->aabb.buildBVH(10);
-  cube->texture.loadTexture();
   world.push_back(std::move(cube));
 
   #pragma region plains
@@ -400,17 +413,17 @@ int main() {
       z = random_float2();
     }
     float theta = (2.0f * 3.14159f * i) / frames;
-    
+
     float novo_x = lookAt.x + raio * std::sin(theta);
     float novo_z = lookAt.z + raio * std::cos(theta);
     float novo_y = lookAt.y + altura_camera;
 
     lookFrom = Point4(novo_x, novo_y, novo_z);
 
-    w = (lookFrom - lookAt); 
+    w = (lookFrom - lookAt);
     w.normalize();
 
-    u = cross(vUp, w); 
+    u = cross(vUp, w);
     u.normalize();
 
     v_cam = cross(w, u);

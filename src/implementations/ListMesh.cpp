@@ -2,10 +2,13 @@
 #include "../../utils/BVH.hpp"
 #include <iostream>
 
-ListMesh::ListMesh(const std::string &filename) : texture(filename) { texture.loadTexture(); };
+ListMesh::ListMesh(const std::string &filename) { 
+  texture->filename = filename;
+  texture->loadTexture(); 
+};
 
 ListMesh::ListMesh(std::vector<std::unique_ptr<Triangle>> faces, std::vector<std::unique_ptr<Point4>> vertices, Point4 centroid, AABB aabb, const std::string &filename) 
-  : faces(std::move(faces)), vertices(std::move(vertices)), centroid(centroid), aabb(std::move(aabb)), texture(filename) { texture.loadTexture(); };
+  : faces(std::move(faces)), vertices(std::move(vertices)), centroid(centroid), aabb(std::move(aabb)) {};
 
 bool ListMesh::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const {
   return aabb.Hit(origin, dir, t_min, t_max, hr);

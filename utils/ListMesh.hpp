@@ -15,7 +15,7 @@ class ListMesh : public Object {
     std::vector<std::unique_ptr<Point4>> vertices;
     Point4 centroid;
     AABB aabb;
-    Texture texture;
+    Texture *texture = new Texture();
 
     ListMesh(const std::string &filename);
     ListMesh(std::vector<std::unique_ptr<Triangle>> faces, std::vector<std::unique_ptr<Point4>> vertices, Point4 centroid, AABB aabb, const std::string &filename);

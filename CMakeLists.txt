@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(main)
 add_compile_options(-Ofast)
