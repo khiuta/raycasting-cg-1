@@ -3,6 +3,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(main)
 add_compile_options(-Ofast)
+add_compile_options(-g)
 add_executable(main
         src/main.cpp
         src/implementations/ListMesh.cpp

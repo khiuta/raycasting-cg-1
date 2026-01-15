@@ -24,14 +24,13 @@ float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
-Point4 lightPos(20, 10, 0);
+Point4 lightPos(0.0f, 0.0f, 20.0f);
 Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
 Point4 lookFrom(0.0f, 5.0f, 15.0f);
 Point4 lookAt(0.0f, 0.0f, 0.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
-
 Vector4 u, v_cam, w;
 
 std::vector<std::unique_ptr<Object>> world;
@@ -42,19 +41,19 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
 }
 
 Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
+  Point3 obj_color(0.0f, 0.0f, 0.0f);
   if(rec.texture != nullptr) {
     int int_u = rec.texture->width * rec.uv.x;
     int int_v = rec.texture->height * rec.uv.y;
 
-    float r = std::get<0>(rec.texture->colors[int_u][int_v]) / 255;
-    float g = std::get<1>(rec.texture->colors[int_u][int_v]) / 255;
-    float b = std::get<2>(rec.texture->colors[int_u][int_v]) / 255;
-    Point3 tex_color(r, g, b);
+    obj_color.x = std::get<0>(rec.texture->colors[int_u][int_v]) / 255.0f;
+    obj_color.y = std::get<1>(rec.texture->colors[int_u][int_v]) / 255.0f;
+    obj_color.z = std::get<2>(rec.texture->colors[int_u][int_v]) / 255.0f;
 
-    return tex_color;
+  } else {
+    obj_color = rec.obj_ptr->getColor();
   }
 
-  Point3 obj_color = rec.obj_ptr->getColor();
   Point3 mat_dif = rec.obj_ptr->getDiffuse();
   Point3 mat_spec = rec.obj_ptr->getSpecular();
 
@@ -301,13 +300,28 @@ void read_obj_file(const std::string& filename,
         Point4 p3 = *v[vertex_indices[2]];
         Vector4 normal = *vn[nor_vertex_indices[0]];
 
-        auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
-        Triangle* tri_ptr = new_tri.get();
+        if(vt.size() > 0){
+          Point3 vt1 = *vt[tex_vertex_indices[0]];
+          Point3 vt2 = *vt[tex_vertex_indices[1]];
+          Point3 vt3 = *vt[tex_vertex_indices[2]];
+          Point3 vt4 = *vt[tex_vertex_indices[3]];
 
-        new_tri->SetMesh(mesh);
+          auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
+          Triangle* tri_ptr = new_tri.get();
 
-        f.push_back(std::move(new_tri));
-        aabb.t.push_back(tri_ptr);
+          new_tri->SetMesh(mesh);
+
+          f.push_back(std::move(new_tri));
+          aabb.t.push_back(tri_ptr);
+        } else {
+          auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
+          Triangle* tri_ptr = new_tri.get();
+
+          new_tri->SetMesh(mesh);
+
+          f.push_back(std::move(new_tri));
+          aabb.t.push_back(tri_ptr);
+        } 
       }
     }
   }
@@ -337,7 +351,7 @@ float random_float2() {
 }
 
 int main() {
-  std::string obj_name = "cube.obj";
+  std::string obj_name = "untitled.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
@@ -345,7 +359,7 @@ int main() {
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   AABB aabb;
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/square_swirls.ppm");
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/mineblogson.ppm");
   read_obj_file(obj_name, v, vn, vt, f, centroid, aabb, cube.get());
   cube->aabb = std::move(aabb);
   cube->faces = std::move(f);

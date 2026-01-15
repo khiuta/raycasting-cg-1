@@ -31,8 +31,11 @@ void Texture::loadTexture(){
   dimensions >> w >> h;
   this->width = w;
   this->height = h;
+  int color_limit;
+  file >> color_limit;
 
-  colors.resize(h, std::vector<std::tuple<int, int, int>>(w));
+  if(h > w) colors.resize(h, std::vector<std::tuple<int, int, int>>(w));
+  else colors.resize(w, std::vector<std::tuple<int, int, int>>(h));
 
   for(int i = 0; i < h; i++){
     for(int j = 0; j < w; j++){
