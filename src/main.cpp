@@ -24,7 +24,7 @@ float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
-Point4 lightPos(0.0f, 0.0f, 20.0f);
+Point4 lightPos(0.0f, 10.0f, 40.0f);
 Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
@@ -41,20 +41,38 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
 }
 
 Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
-  Point3 obj_color(0.0f, 0.0f, 0.0f);
+  Point3 obj_color = rec.obj_ptr->getColor();
+  Point3 mat_dif = rec.obj_ptr->getDiffuse();
+
   if(rec.texture != nullptr) {
-    int int_u = rec.texture->width * rec.uv.x;
-    int int_v = rec.texture->height * rec.uv.y;
+    float u = rec.uv.x;
+    float v = rec.uv.y;
 
-    obj_color.x = std::get<0>(rec.texture->colors[int_u][int_v]) / 255.0f;
-    obj_color.y = std::get<1>(rec.texture->colors[int_u][int_v]) / 255.0f;
-    obj_color.z = std::get<2>(rec.texture->colors[int_u][int_v]) / 255.0f;
+    // fixing values that are negative or greater than 1
+    u = u - std::floor(u);
+    v = v - std::floor(v);
 
-  } else {
-    obj_color = rec.obj_ptr->getColor();
+    // inverting v
+    v = 1.0f - v;
+
+    // calculating indexes
+    int int_u = (int)(u * (rec.texture->width - 1));
+    int int_v = (int)(v * (rec.texture->height - 1));
+
+    int_u = std::clamp(int_u, 0, rec.texture->width - 1);
+    int_v = std::clamp(int_v, 0, rec.texture->height - 1);
+
+    uint8_t r = std::get<0>(rec.texture->colors[int_v][int_u]);
+    uint8_t g = std::get<1>(rec.texture->colors[int_v][int_u]);
+    uint8_t b = std::get<2>(rec.texture->colors[int_v][int_u]);
+    float r_normalized = r / 255.0f;
+    float g_normalized = g / 255.0f;
+    float b_normalized = b / 255.0f;
+    obj_color.x = mat_dif.x = r_normalized;
+    obj_color.y = mat_dif.y = g_normalized;
+    obj_color.z = mat_dif.z = b_normalized;
   }
 
-  Point3 mat_dif = rec.obj_ptr->getDiffuse();
   Point3 mat_spec = rec.obj_ptr->getSpecular();
 
   Point3 amb_color(obj_color.x*amb_light.x, obj_color.y*amb_light.y, obj_color.z*amb_light.z);
@@ -304,7 +322,6 @@ void read_obj_file(const std::string& filename,
           Point3 vt1 = *vt[tex_vertex_indices[0]];
           Point3 vt2 = *vt[tex_vertex_indices[1]];
           Point3 vt3 = *vt[tex_vertex_indices[2]];
-          Point3 vt4 = *vt[tex_vertex_indices[3]];
 
           auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
           Triangle* tri_ptr = new_tri.get();
@@ -351,7 +368,7 @@ float random_float2() {
 }
 
 int main() {
-  std::string obj_name = "untitled.obj";
+  std::string obj_name = "car_1.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
@@ -359,15 +376,17 @@ int main() {
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   AABB aabb;
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/mineblogson.ppm");
+  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/car_1.ppm");
+  std::unique_ptr<ListMesh> car = std::make_unique<ListMesh>("textures/car_1.ppm");
   read_obj_file(obj_name, v, vn, vt, f, centroid, aabb, cube.get());
   cube->aabb = std::move(aabb);
   cube->faces = std::move(f);
   cube->vertices = std::move(v);
   cube->centroid = std::move(centroid);
   std::cout << "Loaded " << cube->faces.size() << " triangles on object " << obj_name << "\n";
-
-  //std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>(std::move(f), std::move(v), centroid, std::move(aabb), "textures/obamium.ppm");
+  
+  cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
+  cube->applyScale(scale(Vector4(0.1, 0.1, 0.1)));
   cube->aabb.buildBVH(10);
   world.push_back(std::move(cube));
 
@@ -404,12 +423,14 @@ int main() {
 
   float raio = 20.0f; // Distância da câmera ao cubo
   float altura_camera = 5.0f;
+  float altura_luz = 20.0f;
 
   int frames = 180;
   float x = random_float2();
   float y = random_float2();
   float z = random_float2();
   auto full_start = std::chrono::high_resolution_clock::now();
+  int cima_ou_baixo = -1;
   for(int i = 0; i < frames; i++){
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -430,6 +451,10 @@ int main() {
     float novo_x = lookAt.x + raio * std::sin(theta);
     float novo_z = lookAt.z + raio * std::cos(theta);
     float novo_y = lookAt.y + altura_camera;
+
+    //altura_camera += cima_ou_baixo*0.5f;
+    //altura_luz += cima_ou_baixo;
+    if(altura_camera < -5.0f || altura_camera > 5.0f) cima_ou_baixo *= -1;
 
     lookFrom = Point4(novo_x, novo_y, novo_z);
 

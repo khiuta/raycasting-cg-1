@@ -15,6 +15,7 @@ void Texture::loadTexture(){
   if(filename.size() == 0) return;
 
   std::ifstream file(filename);
+  std::ifstream colors_debug("colors_debug.ppm");
 
   if(!file.is_open()){
     std::cout << "There was an error loading the texture: " << filename << ".\n";
@@ -34,11 +35,12 @@ void Texture::loadTexture(){
   int color_limit;
   file >> color_limit;
 
-  if(h > w) colors.resize(h, std::vector<std::tuple<int, int, int>>(w));
-  else colors.resize(w, std::vector<std::tuple<int, int, int>>(h));
+  colors.resize(h, std::vector<std::tuple<int, int, int>>(w));
 
+  printf("texture width is %li, texture height is %li\n", colors[0].size(), colors.size());
   for(int i = 0; i < h; i++){
     for(int j = 0; j < w; j++){
+      
       int r, g, b;
       file >> r >> g >> b;
       colors[i][j] = std::make_tuple(r, g, b);
