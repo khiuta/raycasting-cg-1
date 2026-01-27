@@ -130,7 +130,6 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
 
 void raycast(std::ofstream &image, int lin_start, int col_start, int width, int height) {
   
-  // Configurações da Projeção Oblíqua (Pode mover para global ou constantes se preferir)
   // Cavalier: scale = 1.0 (profundidade real)
   // Cabinet:  scale = 0.5 (profundidade "mais natural")
   float oblique_scale = 0.5f; 
@@ -179,7 +178,6 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       
       for(const auto& object : world){
         HitRecord temp_rec;
-        // Lembre-se de usar ray_origin calculado acima
         if(object->Intersect(ray_origin, ray_dir, 0, closest_so_far, temp_rec)){
           hit_anything = true;
           closest_so_far = temp_rec.t;
@@ -188,8 +186,7 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       }
 
       if(hit_anything){
-        // Importante: Lembre de usar a correção do 'd_inv' sugerida na resposta anterior
-        Point3 final_color = setColor(ray_dir, rec, lightPos);
+=        Point3 final_color = setColor(ray_dir, rec, lightPos);
         
         int r_int = (int)(final_color.x * 255);
         int g_int = (int)(final_color.y * 255);
