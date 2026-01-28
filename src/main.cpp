@@ -24,12 +24,20 @@ float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
+enum class  Projection{
+  Perspective,
+  Ortographic,
+  Oblique
+};
+Projection projectionType = Projection::Perspective;
+
+
 Point4 lightPos(0.0f, 10.0f, 40.0f);
 Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
 Point4 lookFrom(0.0f, 5.0f, 15.0f);
-Point4 lookAt(0.0f, 0.0f, 0.0f);
+Point4 lookAt(0.f, 0.0f, 0.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
 Vector4 u, v_cam, w;
 
@@ -80,7 +88,8 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
   Vector4 light_dir = light_pos - rec.p_int;
   float dist_to_light = light_dir.length();
   light_dir.normalize();
-  Vector4 d_inv = lookFrom - rec.p_int;
+ // Vector4 d_inv = lookFrom - rec.p_int;
+ Vector4 d_inv = -d;
   d_inv.normalize();
 
   bool on_shadow = false;
@@ -120,21 +129,56 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
 }
 
 void raycast(std::ofstream &image, int lin_start, int col_start, int width, int height) {
+  
+  // Cavalier: scale = 1.0 (profundidade real)
+  // Cabinet:  scale = 0.5 (profundidade "mais natural")
+  float oblique_scale = 0.5f; 
+  float oblique_angle_rad = 0.0f * (3.14159f / 180.0f); // 45 graus (diagonal)
+
   for(int l = lin_start; l < height; l++){
     for(int c = col_start; c < width; c++){
       float x, y;
       convertDisplayToWindow(c, l, x, y);
 
-      //Vector4 d(x - observer_pos.x, y - observer_pos.y, -dWindow);
-      Vector4 d = (u * x) + (v_cam * y) - (w * dWindow);
-      d.normalize();
+      Point4 ray_origin;
+      Vector4 ray_dir;
+
+      if (projectionType == Projection::Perspective) {
+          // --- PERSPECTIVA ---
+          // Origem fixa, direção varia
+          ray_origin = lookFrom;
+          ray_dir = (u * x) + (v_cam * y) - (w * dWindow);
+          ray_dir.normalize();
+      } 
+      else if (projectionType == Projection::Ortographic) {
+          // --- ORTOGRÁFICA ---
+          // Origem varia, direção fixa (reta para frente)
+          ray_origin = lookFrom + (u * x) + (v_cam * y);
+          ray_dir = -w; 
+          ray_dir.normalize();
+      }
+      else if (projectionType == Projection::Oblique) {
+          // --- OBLÍQUA ---
+          // Origem varia (igual ortográfica)
+          ray_origin = lookFrom + (u * x) + (v_cam * y);
+          
+          // Direção fixa, mas INCLINADA
+          // Calculamos o desvio com base no ângulo e escala desejados
+          float shear_x = oblique_scale * std::cos(oblique_angle_rad);
+          float shear_y = oblique_scale * std::sin(oblique_angle_rad);
+
+          // A direção é "frente" (-w) + um pouco para o lado/cima (shear)
+          ray_dir = -w + (u * shear_x) + (v_cam * shear_y);
+          ray_dir.normalize();
+      }
 
       float closest_so_far = 99999;
       HitRecord rec;
       bool hit_anything = false;
+      
       for(const auto& object : world){
         HitRecord temp_rec;
-        if(object->Intersect(lookFrom, d, 0, closest_so_far, temp_rec)){
+        if(object->Intersect(ray_origin, ray_dir, 0, closest_so_far, temp_rec)){
           hit_anything = true;
           closest_so_far = temp_rec.t;
           rec = temp_rec;
@@ -142,7 +186,8 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       }
 
       if(hit_anything){
-        Point3 final_color = setColor(d, rec, lightPos);
+=        Point3 final_color = setColor(ray_dir, rec, lightPos);
+        
         int r_int = (int)(final_color.x * 255);
         int g_int = (int)(final_color.y * 255);
         int b_int = (int)(final_color.z * 255);
@@ -425,7 +470,7 @@ int main() {
   float altura_camera = 5.0f;
   float altura_luz = 20.0f;
 
-  int frames = 180;
+  int frames = 1;
   float x = random_float2();
   float y = random_float2();
   float z = random_float2();
