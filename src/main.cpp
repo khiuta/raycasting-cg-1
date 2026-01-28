@@ -24,7 +24,7 @@ float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
-enum class  Projection{
+enum class Projection{
   Perspective,
   Ortographic,
   Oblique
@@ -130,10 +130,10 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
 
 void raycast(std::ofstream &image, int lin_start, int col_start, int width, int height) {
   
-  // Cavalier: scale = 1.0 (profundidade real)
-  // Cabinet:  scale = 0.5 (profundidade "mais natural")
+  // cavalier: scale = 1.0 (profundidade real)
+  // cabinet:  scale = 0.5 (profundidade "mais natural")
   float oblique_scale = 0.5f; 
-  float oblique_angle_rad = 0.0f * (3.14159f / 180.0f); // 45 graus (diagonal)
+  float oblique_angle_rad = 0.0f * (3.14159f / 180.0f); // 45 graus
 
   for(int l = lin_start; l < height; l++){
     for(int c = col_start; c < width; c++){
@@ -144,30 +144,21 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       Vector4 ray_dir;
 
       if (projectionType == Projection::Perspective) {
-          // --- PERSPECTIVA ---
-          // Origem fixa, direção varia
           ray_origin = lookFrom;
           ray_dir = (u * x) + (v_cam * y) - (w * dWindow);
           ray_dir.normalize();
       } 
       else if (projectionType == Projection::Ortographic) {
-          // --- ORTOGRÁFICA ---
-          // Origem varia, direção fixa (reta para frente)
           ray_origin = lookFrom + (u * x) + (v_cam * y);
           ray_dir = -w; 
           ray_dir.normalize();
       }
       else if (projectionType == Projection::Oblique) {
-          // --- OBLÍQUA ---
-          // Origem varia (igual ortográfica)
           ray_origin = lookFrom + (u * x) + (v_cam * y);
           
-          // Direção fixa, mas INCLINADA
-          // Calculamos o desvio com base no ângulo e escala desejados
           float shear_x = oblique_scale * std::cos(oblique_angle_rad);
           float shear_y = oblique_scale * std::sin(oblique_angle_rad);
 
-          // A direção é "frente" (-w) + um pouco para o lado/cima (shear)
           ray_dir = -w + (u * shear_x) + (v_cam * shear_y);
           ray_dir.normalize();
       }
@@ -186,7 +177,7 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       }
 
       if(hit_anything){
-=        Point3 final_color = setColor(ray_dir, rec, lightPos);
+        Point3 final_color = setColor(ray_dir, rec, lightPos);
         
         int r_int = (int)(final_color.x * 255);
         int g_int = (int)(final_color.y * 255);
