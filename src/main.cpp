@@ -7,9 +7,10 @@
 #include "../utils/ListMesh.hpp"
 #include "../utils/Plain.hpp"
 #include "../utils/AABB.hpp"
+
 #include <cmath>
 #include <algorithm>
-#include <fstream>
+#include <fstream> 
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -18,27 +19,60 @@
 #include <numbers>
 #include <chrono>
 
+#define Vector3   rVector3
+#define Vector4   rVector4
+#define Matrix    rMatrix
+#define Texture   rTexture
+#define Color     rColor
+#define Image     rImage
+#define Rectangle rRectangle
+#define Camera    rCamera
+
+#include "raylib.h"
+
+#undef Vector3
+#undef Vector4
+#undef Matrix
+#undef Texture
+#undef Color
+#undef Image
+#undef Rectangle
+#undef Camera
+
+const rColor rBLACK    = (rColor){ 0, 0, 0, 255 };
+const rColor rWHITE    = (rColor){ 255, 255, 255, 255 };
+const rColor rRAYWHITE = (rColor){ 245, 245, 245, 255 };
+const rColor rGREEN    = (rColor){ 0, 228, 48, 255 };
+const rColor rYELLOW   = (rColor){ 253, 249, 0, 255 };
+
+// =========================================================
+
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 600;
+
+// Ajustando para usar a resolução da janela
 const float wWindow = 4.f, hWindow = 3.f;
-const int nCol = wWindow*200, nLin = hWindow*200;
+const int nCol = WINDOW_WIDTH;
+const int nLin = WINDOW_HEIGHT;
+
 float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
-enum class  Projection{
+enum class Projection{
   Perspective,
   Ortographic,
   Oblique
 };
 Projection projectionType = Projection::Perspective;
 
-
 Point4 lightPos(0.0f, 10.0f, 40.0f);
 Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
 Point4 lookFrom(0.0f, 5.0f, 15.0f);
-Point4 lookAt(0.f, 0.0f, 0.0f);
-Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
+Point4 lookAt(0.0f, 0.0f, 0.0f);
+Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f); // Usa sua classe Vector4
 Vector4 u, v_cam, w;
 
 std::vector<std::unique_ptr<Object>> world;
@@ -52,20 +86,17 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
   Point3 obj_color = rec.obj_ptr->getColor();
   Point3 mat_dif = rec.obj_ptr->getDiffuse();
 
+  // Texturização
   if(rec.texture != nullptr) {
-    float u = rec.uv.x;
-    float v = rec.uv.y;
+    float u_tex = rec.uv.x;
+    float v_tex = rec.uv.y;
 
-    // fixing values that are negative or greater than 1
-    u = u - std::floor(u);
-    v = v - std::floor(v);
+    u_tex = u_tex - std::floor(u_tex);
+    v_tex = v_tex - std::floor(v_tex);
+    v_tex = 1.0f - v_tex;
 
-    // inverting v
-    v = 1.0f - v;
-
-    // calculating indexes
-    int int_u = (int)(u * (rec.texture->width - 1));
-    int int_v = (int)(v * (rec.texture->height - 1));
+    int int_u = (int)(u_tex * (rec.texture->width - 1));
+    int int_v = (int)(v_tex * (rec.texture->height - 1));
 
     int_u = std::clamp(int_u, 0, rec.texture->width - 1);
     int_v = std::clamp(int_v, 0, rec.texture->height - 1);
@@ -73,23 +104,21 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
     uint8_t r = std::get<0>(rec.texture->colors[int_v][int_u]);
     uint8_t g = std::get<1>(rec.texture->colors[int_v][int_u]);
     uint8_t b = std::get<2>(rec.texture->colors[int_v][int_u]);
-    float r_normalized = r / 255.0f;
-    float g_normalized = g / 255.0f;
-    float b_normalized = b / 255.0f;
-    obj_color.x = mat_dif.x = r_normalized;
-    obj_color.y = mat_dif.y = g_normalized;
-    obj_color.z = mat_dif.z = b_normalized;
+    
+    obj_color.x = mat_dif.x = r / 255.0f;
+    obj_color.y = mat_dif.y = g / 255.0f;
+    obj_color.z = mat_dif.z = b / 255.0f;
   }
 
   Point3 mat_spec = rec.obj_ptr->getSpecular();
-
   Point3 amb_color(obj_color.x*amb_light.x, obj_color.y*amb_light.y, obj_color.z*amb_light.z);
 
   Vector4 light_dir = light_pos - rec.p_int;
   float dist_to_light = light_dir.length();
   light_dir.normalize();
- // Vector4 d_inv = lookFrom - rec.p_int;
- Vector4 d_inv = -d;
+
+  
+  Vector4 d_inv = -d; 
   d_inv.normalize();
 
   bool on_shadow = false;
@@ -103,7 +132,6 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
   }
   if(on_shadow) return amb_color;
 
-  // diffuse lighting
   Point3 diff_light(1, 1, 1);
   float dif_i = std::max(0.f, dot(rec.normal, light_dir));
   Point3 diff_color(
@@ -112,9 +140,8 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
     diff_light.z*mat_dif.z*dif_i
   );
 
-  // specular lighting
   Point3 spec_light(1, 1, 1);
-  int brightness = 50; // light scattering factor
+  int brightness = 50; 
   Vector4 reflection = reflect(rec.normal, light_dir);
   float spec_i = pow(std::max(0.f, dot(reflection, d_inv)), brightness);
   Point3 spec_color(
@@ -128,15 +155,15 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
   return final_color;
 }
 
-void raycast(std::ofstream &image, int lin_start, int col_start, int width, int height) {
+// Recebe 'rImage' (struct Image da Raylib renomeada)
+void raycast(rImage &buffer, int width, int height) {
   
-  // Cavalier: scale = 1.0 (profundidade real)
-  // Cabinet:  scale = 0.5 (profundidade "mais natural")
   float oblique_scale = 0.5f; 
-  float oblique_angle_rad = 0.0f * (3.14159f / 180.0f); // 45 graus (diagonal)
+  float oblique_angle_rad = 45.0f * (3.14159f / 180.0f); 
 
-  for(int l = lin_start; l < height; l++){
-    for(int c = col_start; c < width; c++){
+  // Loop de renderização
+  for(int l = 0; l < height; l++){
+    for(int c = 0; c < width; c++){
       float x, y;
       convertDisplayToWindow(c, l, x, y);
 
@@ -144,30 +171,24 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       Vector4 ray_dir;
 
       if (projectionType == Projection::Perspective) {
-          // --- PERSPECTIVA ---
           // Origem fixa, direção varia
           ray_origin = lookFrom;
           ray_dir = (u * x) + (v_cam * y) - (w * dWindow);
           ray_dir.normalize();
       } 
       else if (projectionType == Projection::Ortographic) {
-          // --- ORTOGRÁFICA ---
-          // Origem varia, direção fixa (reta para frente)
+          // Origem varia, direção fixa (frente)
           ray_origin = lookFrom + (u * x) + (v_cam * y);
           ray_dir = -w; 
           ray_dir.normalize();
       }
       else if (projectionType == Projection::Oblique) {
-          // --- OBLÍQUA ---
-          // Origem varia (igual ortográfica)
+          // Origem varia, direção fixa (inclinada)
           ray_origin = lookFrom + (u * x) + (v_cam * y);
           
-          // Direção fixa, mas INCLINADA
-          // Calculamos o desvio com base no ângulo e escala desejados
           float shear_x = oblique_scale * std::cos(oblique_angle_rad);
           float shear_y = oblique_scale * std::sin(oblique_angle_rad);
-
-          // A direção é "frente" (-w) + um pouco para o lado/cima (shear)
+          
           ray_dir = -w + (u * shear_x) + (v_cam * shear_y);
           ray_dir.normalize();
       }
@@ -178,6 +199,7 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       
       for(const auto& object : world){
         HitRecord temp_rec;
+        // Intersect usa a sua classe Vector4/Point4 (correto)
         if(object->Intersect(ray_origin, ray_dir, 0, closest_so_far, temp_rec)){
           hit_anything = true;
           closest_so_far = temp_rec.t;
@@ -185,47 +207,45 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
         }
       }
 
-      if(hit_anything){
-=        Point3 final_color = setColor(ray_dir, rec, lightPos);
-        
-        int r_int = (int)(final_color.x * 255);
-        int g_int = (int)(final_color.y * 255);
-        int b_int = (int)(final_color.z * 255);
+      // Usa 'rColor' (Color da Raylib renomeada) para pintar
+      rColor pixelColor;
 
-        image << r_int << " " << g_int << " " << b_int << " ";
+      if(hit_anything){
+        Point3 final_color = setColor(ray_dir, rec, lightPos);
+        pixelColor = (rColor){
+            (unsigned char)(final_color.x * 255),
+            (unsigned char)(final_color.y * 255),
+            (unsigned char)(final_color.z * 255),
+            255
+        };
       } else {
-        image << 100 << " " << 100 << " " << 100 << " ";
+        pixelColor = (rColor){100, 100, 100, 255};
       }
+
+      ImageDrawPixel(&buffer, c, l, pixelColor);
     }
-    image << "\n";
   }
 }
 
+// Funções de leitura de arquivo OBJ
 void fill_xyz(std::string line, float &x, float &y, float &z){
   bool is_negative = false;
-  int control = 0; // to control if the next number is for x, y or z (0 = x, 1 = y, 2 = z)
-  // start at 2 because we already know it starts with v and something else that isn't a digit
+  int control = 0; 
   for(int i = 2; i < line.size(); i++){
     if(line[i] == '-') is_negative = true;
-    // if its a digit
     else if(line[i] >= 48 && line[i] <= 57){
       int k = i;
       std::string digit;
       if(is_negative) digit += '-';
-      // iterate throughout the digits
       while(line[k] >= 48 && line[k] <= 57 || line[k] == '.'){
         digit += line[k];
         k++;
       }
-      // jump i to where k stopped to avoid looping the same number
       i += k-i;
-      // reset the negative control var
       is_negative = false;
-      // check whether this was x, y or z
       if(control == 0) x = std::stof(digit);
       else if(control == 1) y = std::stof(digit);
       else if(control == 2) z = std::stof(digit);
-      //advance the control var
       control++;
     }
   }
@@ -248,67 +268,45 @@ void read_obj_file(const std::string& filename,
   }
 
   std::string line;
-
   float max_x, min_x, max_y, min_y, max_z, min_z;
   bool first_vertice = true;
 
   while(std::getline(file, line)){
     if(line[0] == 'v'){
-      // if its just a vertex
       if(line[1] == ' '){
         float x, y, z;
         fill_xyz(line, x, y, z);
         if(first_vertice){
-          min_x = max_x = x;
-          min_y = max_y = y;
-          min_z = max_z = z;
-          first_vertice = false;
+          min_x = max_x = x; min_y = max_y = y; min_z = max_z = z; first_vertice = false;
         } else {
-          if(x < min_x) min_x = x;
-          if(x > max_x) max_x = x;
-          if(y < min_y) min_y = y;
-          if(y > max_y) max_y = y;
-          if(z < min_z) min_z = z;
-          if(z > max_z) max_z = z;
+          if(x < min_x) min_x = x; if(x > max_x) max_x = x;
+          if(y < min_y) min_y = y; if(y > max_y) max_y = y;
+          if(z < min_z) min_z = z; if(z > max_z) max_z = z;
         }
         v.push_back(std::make_unique<Point4>(x, y, z, 1));
       } else if(line[1] == 'n'){
-        // if its a vertex normal
         float x, y, z;
         fill_xyz(line, x, y, z);
         vn.push_back(std::make_unique<Vector4>(x, y, z, 0));
       } else if(line[1] == 't'){
-        // if its a texture vertex
         float x, y, z = 0;
-        // it supports just x and y, and z wont be used or filled
         fill_xyz(line, x, y, z);
         vt.push_back(std::make_unique<Point3>(x, y, z));
       }
     } else if(line[0] == 'f'){
-      // to check if we're reading point 1, 2 or 3 of the triangle
       int point_control = 0;
-      // to check if we're reading a vertex, texture vertex or vertex normal
       int vertex_control = 0;
       int vertex_indices[4] = {0, 0, 0, -1};
       int tex_vertex_indices[4] = {0, 0, 0, 0};
       int nor_vertex_indices[4] = {0, 0, 0, 0};
-      // skip 2 because it starts with f and blank
+      
       for(int i = 2; i < line.size(); i++){
-        if(line[i] == ' ') {
-            point_control++;
-            vertex_control = 0;
-        }
+        if(line[i] == ' ') { point_control++; vertex_control = 0; }
         if(line[i] == '/') vertex_control++;
-        // if its a digit
         if(line[i] >= 48 && line[i] <= 57){
           int k = i;
           std::string digit;
-          // iterate throughout the digit
-          while(line[k] >= 48 && line[k] <= 57){
-            digit += line[k];
-            k++;
-          }
-          // check if it was a vertex, texture vertex or vertex normal
+          while(line[k] >= 48 && line[k] <= 57){ digit += line[k]; k++; }
           if(vertex_control == 0) vertex_indices[point_control] = std::stoi(digit) - 1;
           else if(vertex_control == 1) tex_vertex_indices[point_control] = std::stoi(digit) - 1;
           else if(vertex_control == 2) nor_vertex_indices[point_control] = std::stoi(digit) - 1;
@@ -316,103 +314,56 @@ void read_obj_file(const std::string& filename,
         }
       }
 
-      // if the faces are not triangulated
       if(vertex_indices[3] != -1){
-        Point4 p1 = *v[vertex_indices[0]];
-        Point4 p2 = *v[vertex_indices[1]];
-        Point4 p3 = *v[vertex_indices[2]];
-        Point4 p4 = *v[vertex_indices[3]];
-        Vector4 normal = *vn[nor_vertex_indices[0]];
+        Point4 p1 = *v[vertex_indices[0]]; Point4 p2 = *v[vertex_indices[1]];
+        Point4 p3 = *v[vertex_indices[2]]; Point4 p4 = *v[vertex_indices[3]];
+        Vector4 normal = *vn[nor_vertex_indices[0]]; // Usa sua classe Vector4
 
         if(vt.size() > 0){
-          Point3 vt1 = *vt[tex_vertex_indices[0]];
-          Point3 vt2 = *vt[tex_vertex_indices[1]];
-          Point3 vt3 = *vt[tex_vertex_indices[2]];
-          Point3 vt4 = *vt[tex_vertex_indices[3]];
-
-          auto new_tri_1 = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
-          auto new_tri_2 = std::make_unique<Triangle>(p1, p3, p4, normal, vt1, vt3, vt4);
-          Triangle* tri_ptr_1 = new_tri_1.get();
-          Triangle* tri_ptr_2 = new_tri_2.get();
-
-          new_tri_1->SetMesh(mesh);
-          new_tri_2->SetMesh(mesh);
-
-          f.push_back(std::move(new_tri_1));
-          f.push_back(std::move(new_tri_2));
-          aabb.t.push_back(tri_ptr_1);
-          aabb.t.push_back(tri_ptr_2);
+          Point3 vt1 = *vt[tex_vertex_indices[0]]; Point3 vt2 = *vt[tex_vertex_indices[1]];
+          Point3 vt3 = *vt[tex_vertex_indices[2]]; Point3 vt4 = *vt[tex_vertex_indices[3]];
+          
+          auto t1 = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
+          auto t2 = std::make_unique<Triangle>(p1, p3, p4, normal, vt1, vt3, vt4);
+          t1->SetMesh(mesh); t2->SetMesh(mesh);
+          f.push_back(std::move(t1)); f.push_back(std::move(t2));
+          aabb.t.push_back(f[f.size()-2].get()); aabb.t.push_back(f.back().get());
         } else {
-          auto new_tri_1 = std::make_unique<Triangle>(p1, p2, p3, normal);
-          auto new_tri_2 = std::make_unique<Triangle>(p1, p3, p4, normal);
-          Triangle* tri_ptr_1 = new_tri_1.get();
-          Triangle* tri_ptr_2 = new_tri_2.get();
-
-          new_tri_1->SetMesh(mesh);
-          new_tri_2->SetMesh(mesh);
-
-          f.push_back(std::move(new_tri_1));
-          f.push_back(std::move(new_tri_2));
-          aabb.t.push_back(tri_ptr_1);
-          aabb.t.push_back(tri_ptr_2);
+          auto t1 = std::make_unique<Triangle>(p1, p2, p3, normal);
+          auto t2 = std::make_unique<Triangle>(p1, p3, p4, normal);
+          t1->SetMesh(mesh); t2->SetMesh(mesh);
+          f.push_back(std::move(t1)); f.push_back(std::move(t2));
+          aabb.t.push_back(f[f.size()-2].get()); aabb.t.push_back(f.back().get());
         }
       } else {
-        // if the faces are triangulated
-        Point4 p1 = *v[vertex_indices[0]];
-        Point4 p2 = *v[vertex_indices[1]];
-        Point4 p3 = *v[vertex_indices[2]];
-        Vector4 normal = *vn[nor_vertex_indices[0]];
-
+        Point4 p1 = *v[vertex_indices[0]]; Point4 p2 = *v[vertex_indices[1]];
+        Point4 p3 = *v[vertex_indices[2]]; Vector4 normal = *vn[nor_vertex_indices[0]];
         if(vt.size() > 0){
-          Point3 vt1 = *vt[tex_vertex_indices[0]];
-          Point3 vt2 = *vt[tex_vertex_indices[1]];
-          Point3 vt3 = *vt[tex_vertex_indices[2]];
-
-          auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
-          Triangle* tri_ptr = new_tri.get();
-
-          new_tri->SetMesh(mesh);
-
-          f.push_back(std::move(new_tri));
-          aabb.t.push_back(tri_ptr);
+          Point3 vt1 = *vt[tex_vertex_indices[0]]; Point3 vt2 = *vt[tex_vertex_indices[1]]; Point3 vt3 = *vt[tex_vertex_indices[2]];
+          auto t = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
+          t->SetMesh(mesh); f.push_back(std::move(t)); aabb.t.push_back(f.back().get());
         } else {
-          auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
-          Triangle* tri_ptr = new_tri.get();
-
-          new_tri->SetMesh(mesh);
-
-          f.push_back(std::move(new_tri));
-          aabb.t.push_back(tri_ptr);
+          auto t = std::make_unique<Triangle>(p1, p2, p3, normal);
+          t->SetMesh(mesh); f.push_back(std::move(t)); aabb.t.push_back(f.back().get());
         } 
       }
     }
   }
 
-  centroid.x = (max_x + min_x)/2;
-  centroid.y = (max_y + min_y)/2;
-  centroid.z = (max_z + min_z)/2;
-
-  aabb.min_x = min_x;
-  aabb.max_x = max_x;
-  aabb.min_y = min_y;
-  aabb.max_y = max_y;
-  aabb.min_z = min_z;
-  aabb.max_z = max_z;
-
-  return;
-}
-
-float random_float2() {
-  static std::mt19937 generator(
-    std::chrono::high_resolution_clock::now().time_since_epoch().count()
-  );
-
-  static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
-  return distribution(generator);
+  centroid.x = (max_x + min_x)/2; centroid.y = (max_y + min_y)/2; centroid.z = (max_z + min_z)/2;
+  aabb.min_x = min_x; aabb.max_x = max_x; aabb.min_y = min_y; aabb.max_y = max_y; aabb.min_z = min_z; aabb.max_z = max_z;
 }
 
 int main() {
+  InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Raycasting CG1");
+  SetTargetFPS(60);
+
+  // Cria buffer na CPU (usando rBLACK em vez de BLACK)
+  rImage screenBuffer = GenImageColor(WINDOW_WIDTH, WINDOW_HEIGHT, rBLACK);
+  // Carrega textura na GPU
+  Texture2D screenTexture = LoadTextureFromImage(screenBuffer);
+
+  // --- CARREGAMENTO DO MUNDO ---
   std::string obj_name = "car_1.obj";
 
   std::vector<std::unique_ptr<Point4>> v;
@@ -421,8 +372,9 @@ int main() {
   std::vector<std::unique_ptr<Triangle>> f;
   Point4 centroid;
   AABB aabb;
+  
   std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/car_1.ppm");
-  std::unique_ptr<ListMesh> car = std::make_unique<ListMesh>("textures/car_1.ppm");
+  
   read_obj_file(obj_name, v, vn, vt, f, centroid, aabb, cube.get());
   cube->aabb = std::move(aabb);
   cube->faces = std::move(f);
@@ -443,109 +395,63 @@ int main() {
   Point3 right_wall_col(.6, .2, .7);
   Point3 ceiling_col(.2, .2, .9);
   Point3 floor_col(.9, .5, 0);
-  Plain back_wall(Point4(0, 0, -200), Vector4(0, 0, 1), back_wall_col, back_wall_col, specular_plains);
-  Plain front_wall(Point4(0, 0, 100), Vector4(0, 0, -1), front_wall_col, front_wall_col, specular_plains);
-  Plain left_wall(Point4(-100, 0, 0), Vector4(1, 0, 0), left_wall_col, left_wall_col, specular_plains);
-  Plain right_wall(Point4(100, 0, 0), Vector4(-1, 0, 0), right_wall_col, right_wall_col, specular_plains);
-  Plain ceiling(Point4(0, 100, 0), Vector4(0, -1, 0), ceiling_col, ceiling_col, specular_plains);
-  Plain floor(Point4(0, -50, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains);
-
-  world.push_back(std::make_unique<Plain>(back_wall));
-  world.push_back(std::make_unique<Plain>(front_wall));
-  world.push_back(std::make_unique<Plain>(left_wall));
-  world.push_back(std::make_unique<Plain>(right_wall));
-  world.push_back(std::make_unique<Plain>(ceiling));
-  world.push_back(std::make_unique<Plain>(floor));
+  
+  world.push_back(std::make_unique<Plain>(Point4(0, 0, -200), Vector4(0, 0, 1), back_wall_col, back_wall_col, specular_plains));
+  world.push_back(std::make_unique<Plain>(Point4(0, 0, 100), Vector4(0, 0, -1), front_wall_col, front_wall_col, specular_plains));
+  world.push_back(std::make_unique<Plain>(Point4(-100, 0, 0), Vector4(1, 0, 0), left_wall_col, left_wall_col, specular_plains));
+  world.push_back(std::make_unique<Plain>(Point4(100, 0, 0), Vector4(-1, 0, 0), right_wall_col, right_wall_col, specular_plains));
+  world.push_back(std::make_unique<Plain>(Point4(0, 100, 0), Vector4(0, -1, 0), ceiling_col, ceiling_col, specular_plains));
+  world.push_back(std::make_unique<Plain>(Point4(0, -50, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains));
   #pragma endregion
 
-  w = (lookFrom - lookAt); // Vetor apontando para trás
-  w.normalize();
-
-  u = cross(vUp, w); // Vetor apontando para a direita
-  u.normalize();
-
-  v_cam = cross(w, u);
-
-  float raio = 20.0f; // Distância da câmera ao cubo
+  float raio = 20.0f;
   float altura_camera = 5.0f;
-  float altura_luz = 20.0f;
+  float angle = 0.0f;
+  bool paused = false;
 
-  int frames = 1;
-  float x = random_float2();
-  float y = random_float2();
-  float z = random_float2();
-  auto full_start = std::chrono::high_resolution_clock::now();
-  int cima_ou_baixo = -1;
-  for(int i = 0; i < frames; i++){
-    auto start = std::chrono::high_resolution_clock::now();
+  // --- LOOP PRINCIPAL ---
+  while (!WindowShouldClose()) {
+    
+    // Controles
+    if (IsKeyPressed(KEY_ONE)) projectionType = Projection::Perspective;
+    if (IsKeyPressed(KEY_TWO)) projectionType = Projection::Ortographic;
+    if (IsKeyPressed(KEY_THREE)) projectionType = Projection::Oblique;
+    if (IsKeyPressed(KEY_SPACE)) paused = !paused;
 
-    std::string image_name = "frames/";
-    if(i < 10) image_name += "frame_00" + std::to_string(i);
-    else if(i < 100) image_name += "frame_0" + std::to_string(i);
-    else image_name += "frame_" + std::to_string(i);
-    image_name += ".ppm";
-    std::ofstream image(image_name);
+    // Rotação
+    if(!paused) angle += 0.02f;
 
-    if((i+1) % 30 == 0){
-      x = random_float2();
-      y = random_float2();
-      z = random_float2();
-    }
-    float theta = (2.0f * 3.14159f * i) / frames;
+    float novo_x = lookAt.x + raio * std::sin(angle);
+    float novo_z = lookAt.z + raio * std::cos(angle);
+    lookFrom = Point4(novo_x, altura_camera, novo_z);
 
-    float novo_x = lookAt.x + raio * std::sin(theta);
-    float novo_z = lookAt.z + raio * std::cos(theta);
-    float novo_y = lookAt.y + altura_camera;
-
-    //altura_camera += cima_ou_baixo*0.5f;
-    //altura_luz += cima_ou_baixo;
-    if(altura_camera < -5.0f || altura_camera > 5.0f) cima_ou_baixo *= -1;
-
-    lookFrom = Point4(novo_x, novo_y, novo_z);
-
-    w = (lookFrom - lookAt);
-    w.normalize();
-
-    u = cross(vUp, w);
-    u.normalize();
-
+    w = (lookFrom - lookAt); w.normalize();
+    u = cross(vUp, w); u.normalize();
     v_cam = cross(w, u);
 
-    // transforming the cube
-    //cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
-    //cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
-    //cube->applyScale(scale(Vector4(4, 4, 4)));
-    //cube->applyTranslate(translate(Vector4(cube->centroid.x, cube->centroid.y, cube->centroid.z)));
-    //std::cout << cube->centroid.x << " " << cube->centroid.y << " " << cube->centroid.z << "\n";
+    // 1. Raytracing na CPU
+    raycast(screenBuffer, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    // putting the transformed cube in the world
-    //world.push_back(std::move(cube));
+    // 2. Upload para GPU
+    UpdateTexture(screenTexture, screenBuffer.data);
 
-    // rendering
-    if(image.is_open()) {
-      image << "P3\n";
-      image << nCol << " " << nLin << "\n";
-      image << 255 << "\n";
+    // 3. Desenho na Tela
+    BeginDrawing();
+      // Usando rRAYWHITE e rWHITE
+      ClearBackground(rRAYWHITE);
+      DrawTexture(screenTexture, 0, 0, rWHITE);
 
-      raycast(image, 0, 0, nCol, nLin);
-
-      image.close();
-    }
-
-    auto stop = std::chrono::high_resolution_clock::now();
-
-    std::chrono::duration<double> elapsed = stop - start;
-
-    std::cout << "Frame " << i+1 << " out of " << frames << " rendered in " << elapsed.count() << " seconds.\n";
-
-    // creating a pointer to the transformed cube
-    //std::unique_ptr<Object> temp_generic = std::move(world.back());
-    // giving the ownership back to cube
-    //cube.reset(static_cast<ListMesh*>(temp_generic.release()));
-    // getting the cube out of world so theres always only one cube
-    //world.pop_back();
+      DrawFPS(10, 10);
+      DrawText("1: Persp | 2: Ortho | 3: Oblique", 10, 30, 20, rGREEN);
+      DrawText(TextFormat("Projection: %d", (int)projectionType), 10, 50, 20, rYELLOW);
+      
+    EndDrawing();
   }
-  auto full_stop = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> elapsed = full_stop - full_start;
-  std::cout << elapsed.count() << " seconds to render " << frames << " frames.\n";
+
+  // Limpeza
+  UnloadTexture(screenTexture);
+  UnloadImage(screenBuffer);
+  CloseWindow();
+
+  return 0;
 }

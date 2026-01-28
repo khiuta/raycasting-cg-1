@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+find_package(raylib 3.0 REQUIRED) # Requires at least version 3.0
 
 project(main)
+
 add_compile_options(-Ofast)
 add_compile_options(-g)
 add_executable(main
@@ -16,6 +18,7 @@ add_executable(main
         src/implementations/Texture.cpp)
 target_include_directories(main PRIVATE utils)
 
+target_link_libraries(${PROJECT_NAME} raylib)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Configuração de build não especificada, definindo para 'Release'")
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
