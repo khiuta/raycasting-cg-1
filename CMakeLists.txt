@@ -15,6 +15,7 @@ add_executable(main
         src/implementations/AABB.cpp
         src/implementations/Texture.cpp
         src/implementations/Cylinder.cpp
+        src/implementations/Rectangle.cpp
         src/implementations/Cone.cpp)
 target_include_directories(main PRIVATE utils)
 

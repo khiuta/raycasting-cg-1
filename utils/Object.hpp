@@ -12,6 +12,8 @@ class Object {
     virtual const Point3& getColor() const = 0;
     virtual const Point3& getDiffuse() const = 0;
     virtual const Point3& getSpecular() const = 0;
+    
+    // Novo método para reflexão (0.0 = fosco, 1.0 = espelho perfeito)
+    virtual float getReflectivity() const { return 0.0f; }
 };
-
 #endif
