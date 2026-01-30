@@ -109,7 +109,64 @@ Point3 getStarryBackground(const Vector4& dir) {
     }
     return skyColor;
 }
+// 1. Função de Filtro Bilinear
+Point3 sampleTextureBilinear(const Texture* tex, float u, float v) {
+    if (!tex || tex->colors.empty()) return Point3(1, 0, 1); 
 
+    float x = u * tex->width - 0.5f;
+    float y = v * tex->height - 0.5f;
+
+    int x_floor = std::floor(x);
+    int y_floor = std::floor(y);
+    int x_ceil = x_floor + 1;
+    int y_ceil = y_floor + 1;
+
+    float w_x = x - x_floor;
+    float w_y = y - y_floor;
+    float w_x_inv = 1.0f - w_x;
+    float w_y_inv = 1.0f - w_y;
+
+    auto getColor = [&](int cx, int cy) -> Point3 {
+        cx = std::clamp(cx, 0, tex->width - 1);
+        cy = std::clamp(cy, 0, tex->height - 1);
+        auto pixel = tex->colors[cy][cx];
+        return Point3(
+            std::get<0>(pixel) / 255.0f,
+            std::get<1>(pixel) / 255.0f,
+            std::get<2>(pixel) / 255.0f
+        );
+    };
+
+    Point3 c00 = getColor(x_floor, y_floor);
+    Point3 c10 = getColor(x_ceil, y_floor);
+    Point3 c01 = getColor(x_floor, y_ceil);
+    Point3 c11 = getColor(x_ceil, y_ceil);
+
+    Point3 top = Point3(
+        c00.x * w_x_inv + c10.x * w_x,
+        c00.y * w_x_inv + c10.y * w_x,
+        c00.z * w_x_inv + c10.z * w_x
+    );
+
+    Point3 bottom = Point3(
+        c01.x * w_x_inv + c11.x * w_x,
+        c01.y * w_x_inv + c11.y * w_x,
+        c01.z * w_x_inv + c11.z * w_x
+    );
+
+    return Point3(
+        top.x * w_y_inv + bottom.x * w_y,
+        top.y * w_y_inv + bottom.y * w_y,
+        top.z * w_y_inv + bottom.z * w_y
+    );
+}
+
+// 2. Função Auxiliar de Reflexão (MOVIDA PARA CIMA)
+Vector4 reflect_ray(const Vector4& v, const Vector4& n) {
+    return v - n * 2.0f * dot(v, n);
+}
+
+// 3. Função setColor (Agora ela conhece 'reflect_ray' e 'sampleTextureBilinear')
 Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights){
   Point3 obj_color = rec.obj_ptr->getColor();
 
@@ -119,16 +176,9 @@ Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights){
     u = u - std::floor(u);
     v = v - std::floor(v);
     v = 1.0f - v;
-    int int_u = (int)(u * (rec.texture->width - 1));
-    int int_v = (int)(v * (rec.texture->height - 1));
-    int_u = std::clamp(int_u, 0, rec.texture->width - 1);
-    int_v = std::clamp(int_v, 0, rec.texture->height - 1);
-    uint8_t r = std::get<0>(rec.texture->colors[int_v][int_u]);
-    uint8_t g = std::get<1>(rec.texture->colors[int_v][int_u]);
-    uint8_t b = std::get<2>(rec.texture->colors[int_v][int_u]);
-    obj_color.x  = r / 255.0f;
-    obj_color.y = g / 255.0f;
-    obj_color.z = b / 255.0f;
+
+    // Usando o filtro bilinear
+    obj_color = sampleTextureBilinear(rec.texture, u, v);
   }
   Point3 final_color = obj_color * amb_light;
 
@@ -171,7 +221,8 @@ Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights){
       Point3 diff_part = (obj_color * l.color) * dif_i; 
       final_color = final_color + diff_part;
 
-      Vector4 reflection = reflect(rec.normal, light_dir); // Usando função reflect existente no utils
+      // Agora funciona porque reflect_ray foi declarada antes
+      Vector4 reflection = reflect_ray(rec.normal, light_dir);
       float spec_i = std::pow(std::max(0.f, dot(reflection, -d)), 50) * intensity;
       Point3 spec_part = (rec.obj_ptr->getSpecular() * l.color) * spec_i;
       final_color = final_color + spec_part;
@@ -181,11 +232,6 @@ Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights){
   final_color.clamp();
   return final_color;
 }
-
-Vector4 reflect_ray(const Vector4& v, const Vector4& n) {
-    return v - n * 2.0f * dot(v, n);
-}
-
 Point3 cast_ray(const Point4& ray_origin, const Vector4& ray_dir, int depth) {
     if (depth <= 0) return Point3(0,0,0);
 
@@ -481,7 +527,7 @@ int main() {
   lights.push_back(post_spot2);
 
   #pragma region world objects
-  auto car1 = createMesh("car_1.obj", "textures/car_1.ppm");  
+  auto car1 = createMesh("car_1.obj", "textures/car_1.png");  
 
   car1->applyTranslate(translate(Vector4(-car1->centroid.x, -car1->centroid.y, -car1->centroid.z)));
   car1->applyScale(scale(Vector4(0.1, 0.1, 0.1)));
@@ -493,14 +539,14 @@ int main() {
   car1->applyTranslate(translate(Vector4(20.0f, car_half_height, 30.0f)));
 
 
-  auto car2 = createMesh("car_1.obj", "textures/car_1.ppm");
+  auto car2 = createMesh("car_1.obj", "textures/car_1.png");
 
   car2->applyTranslate(translate(Vector4(-car2->centroid.x, -car2->centroid.y, -car2->centroid.z)));
   car2->applyScale(scale(Vector4(0.1f, 0.1f, 0.1f)));
   car2->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
   car2->applyTranslate(translate(Vector4(30.0f, car_half_height, 30.0f)));
 
-  auto car3 = createMesh("car_1.obj", "textures/car_1.ppm");
+  auto car3 = createMesh("car_1.obj", "textures/car_1.png");
 
   car3->applyTranslate(translate(Vector4(-car3->centroid.x, -car3->centroid.y, -car3->centroid.z)));
   car3->applyScale(scale(Vector4(0.1f, 0.1f, 0.1f)));
@@ -514,18 +560,53 @@ int main() {
   cube->applyTranslate(translate(Vector4(0.0f, half_cube_height, -25.0f)));
   for(auto& face : cube->faces){ face->reflectivity = 1.0f; }
 
-  auto shop = createMesh("loja.obj", "textures/loja.ppm");
+  auto shop = createMesh("loja.obj", "textures/loja.png");
   shop->applyTranslate(translate(Vector4(-shop->centroid.x, -shop->centroid.y, -shop->centroid.z)));
   shop->applyScale(scale(Vector4(6.0f, 10.0f, 5.0f)));
   shop->applyRotation(rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
   float half_shop_height = (shop->aabb.max_y - shop->aabb.min_y) / 2.0f;
   shop->applyTranslate(translate(Vector4(30.0f, half_shop_height, 5.0f)));
+  //world.push_back(std::move(shop));
+
 
   auto road = createMesh("cube.obj", "");
   road->applyTranslate(translate(Vector4(-road->centroid.x, -road->centroid.y, -road->centroid.z)));
   road->applyScale(scale(Vector4(60.0f, 0.01f, 10.0f)));
   float half_road_height = (road->aabb.max_y - road->aabb.min_y) / 2.0f;
   road->applyTranslate(translate(Vector4(30.0f, half_road_height, 50.0f)));
+
+  #pragma region vegetation
+
+  auto sidewalk = createMesh("floor.obj", "textures/floor_texture.png");
+  sidewalk->applyTranslate(translate(Vector4(-sidewalk->centroid.x, -sidewalk->centroid.y, -sidewalk->centroid.z)));
+  sidewalk->applyScale(scale(Vector4(1.0f, 1.0f, 1.0f))); 
+  sidewalk->applyRotation(rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
+
+  float sidewalk_half_height = (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
+  sidewalk->applyTranslate(translate(Vector4(10.0f, -0.3f, 35.0f)));
+  world.push_back(std::move(sidewalk));
+
+
+  auto tree = createMesh("tree01.obj", "textures/tree01_spring.png");
+  tree->applyTranslate(translate(Vector4(-tree->centroid.x, -tree->centroid.y, -tree->centroid.z)));
+  tree->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f))); 
+  float tree_half_height = (tree->aabb.max_y - tree->aabb.min_y) / 2.0f;
+  tree->applyTranslate(translate(Vector4(10.0f, 5.0f, 40.0f)));
+  world.push_back(std::move(tree));
+
+  auto bush = createMesh("bush01.obj", "textures/bush1_spring.png");
+  bush->applyTranslate(translate(Vector4(-bush->centroid.x, -bush->centroid.y, -bush->centroid.z)));
+  bush->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f))); 
+  float bush_half_height = (bush->aabb.max_y - bush->aabb.min_y) / 2.0f;
+  bush->applyTranslate(translate(Vector4(48.0f, 2.0f, 40.0f)));
+  world.push_back(std::move(bush));
+
+  auto bush2 = createMesh("bush06.obj", "textures/bush6_spring5.png");
+  bush2->applyTranslate(translate(Vector4(-bush2->centroid.x, -bush2->centroid.y, -bush2->centroid.z)));
+  bush2->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f))); 
+  float bush2_half_height = (bush2->aabb.max_y - bush2->aabb.min_y) / 2.0f;
+  bush2->applyTranslate(translate(Vector4(48.0f, 2.0f, 65.0f)));
+  world.push_back(std::move(bush2));
 
   #pragma region road strips
   auto road_strip1 = createMesh("cube.obj", "");
@@ -696,7 +777,7 @@ int main() {
   Point3 floor_col(.9, .5, 0);
   
 
-  world.push_back(std::make_unique<Plain>(Point4(0, 0, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains));
+  //world.push_back(std::make_unique<Plain>(Point4(0, 0, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains));
 
   Point4 mirror_origin(16.0f, 0.01f, 20.1f);
   Point4 mirror_width_pt(46.0f, 0.01f, 20.1f);
