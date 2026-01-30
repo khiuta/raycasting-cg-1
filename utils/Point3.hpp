@@ -40,4 +40,12 @@ inline Point3 operator*(const Point3 &p, float t) {
   return { p.x * t, p.y * t, p.z * t };
 }
 
+inline Point3 operator*(float t, const Point3 &p) {
+  return { p.x * t, p.y * t, p.z * t };
+}
+
+inline Point3 operator*(const Point3 &p1, const Point3 &p2) {
+  return { p1.x * p2.x, p1.y * p2.y, p1.z * p2.z };
+}
+
 #endif // !POINT

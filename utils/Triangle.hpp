@@ -14,6 +14,7 @@ class Triangle : public Object {
     Point3 color, dif_color, spec_color, vt1, vt2, vt3;
     Vector4 e1, e2, e3, normal;
     double area;
+    float reflectivity = 0.0f;
     ListMesh *mesh;
 
     Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const Vector4 &n);

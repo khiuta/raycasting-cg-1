@@ -13,7 +13,9 @@ add_executable(main
         src/implementations/Plain.cpp
         src/implementations/Sphere.cpp
         src/implementations/AABB.cpp
-        src/implementations/Texture.cpp)
+        src/implementations/Texture.cpp
+        src/implementations/Cylinder.cpp
+        src/implementations/Cone.cpp)
 target_include_directories(main PRIVATE utils)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)

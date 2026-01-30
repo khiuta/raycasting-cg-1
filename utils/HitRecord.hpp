@@ -13,6 +13,7 @@ struct HitRecord {
   const Object *obj_ptr;
   Point3 uv;
   Texture *texture = nullptr;
+  float reflectivity;
 };
 
 #endif

@@ -23,6 +23,7 @@ class ListMesh : public Object {
 
     bool Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const override;
 
+    void rebuildStructures();
     void applyTranslate(const Matrix4 &m);
     void applyScale(const Matrix4 &m);
     void applyRotation(const Matrix4 &m);

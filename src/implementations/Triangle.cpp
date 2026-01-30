@@ -1,5 +1,6 @@
 #include "../../utils/Triangle.hpp"
 #include <iostream>
+#include <cmath>
 
 float random_float() {
     static std::mt19937 generator(
@@ -25,9 +26,9 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   this->e1 = r1;
   this->e2 = e2;
   this->e3 = e3;
-  float r = random_float();
-  float g = random_float();
-  float b = random_float();
+  float r = 0.4f;
+  float g = 0.4f;
+  float b = 0.4f;
   this->color = Point3(r, g, b);
   this->dif_color = Point3(r, g, b);
   this->spec_color = Point3(.7, .7, .7);
@@ -50,9 +51,9 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   this->e1 = r1;
   this->e2 = e2;
   this->e3 = e3;
-  float r = random_float();
-  float g = random_float();
-  float b = random_float();
+  float r = 0.4f;
+  float g = 0.4f;
+  float b = 0.4f;
   this->color = Point3(r, g, b);
   this->dif_color = Point3(r, g, b);
   this->spec_color = Point3(.7, .7, .7);
@@ -96,6 +97,8 @@ bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
 
       hr.uv = uv;
       hr.texture = this->mesh->texture;
+
+      hr.reflectivity = this->reflectivity;
     } else return false;
 
     return true;

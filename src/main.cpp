@@ -7,6 +7,9 @@
 #include "../utils/ListMesh.hpp"
 #include "../utils/Plain.hpp"
 #include "../utils/AABB.hpp"
+#include "../utils/Sphere.hpp"
+#include "../utils/Cylinder.hpp"
+#include "../utils/Cone.hpp"
 #include <cmath>
 #include <algorithm>
 #include <fstream>
@@ -24,6 +27,9 @@ float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
+float xmin = -2.0f, xmax = 2.0f;
+float ymin = -1.5f, ymax = 1.5f;
+
 enum class Projection{
   Perspective,
   Ortographic,
@@ -31,31 +37,85 @@ enum class Projection{
 };
 Projection projectionType = Projection::Perspective;
 
+enum class LightType { DIRECTIONAL, SPOTLIGHT, POINTLIGHT };
 
-Point4 lightPos(0.0f, 10.0f, 40.0f);
+struct Light {
+  LightType type;
+  Point4 position;
+  Vector4 direction;
+  Point3 color;
+  float cutoff;
+  float outer_cutoff;
+};
+
+struct Material {
+  Point3 color;
+  Point3 spec;
+};
+
+std::vector<Light> lights;
+
 Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
-Point4 lookFrom(0.0f, 5.0f, 15.0f);
-Point4 lookAt(0.f, 0.0f, 0.0f);
+Point4 lookFrom(35.0f, 5.0f, 55.0f);
+Point4 lookAt(0.f, 5.0f, 0.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
 Vector4 u, v_cam, w;
 
 std::vector<std::unique_ptr<Object>> world;
 
+// void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& ndc_y) {
+//   ndc_x = -wWindow/2.0f + dx/2.0f + display_x*dx;
+//   ndc_y = hWindow/2.0f - dy/2.0f - display_y*dy;
+// }
+
 void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& ndc_y) {
-  ndc_x = -wWindow/2.0f + dx/2.0f + display_x*dx;
-  ndc_y = hWindow/2.0f - dy/2.0f - display_y*dy;
+    // calculate the size of the window
+    float width_w = xmax - xmin;
+    float height_w = ymax - ymin;
+
+    // calculate the size of each pixel
+    float local_dx = width_w / nCol;
+    float local_dy = height_w / nLin;
+
+    // map the pixel (0, 0) to the left upper corner and add local_dx/2 to get the center of the pixel
+    ndc_x = xmin + local_dx/2.0f + (display_x * local_dx);
+    ndc_y = ymax - local_dy/2.0f - (display_y * local_dy);
 }
 
-Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
-  Point3 obj_color = rec.obj_ptr->getColor();
-  Point3 mat_dif = rec.obj_ptr->getDiffuse();
+float hash(Vector4 v) {
+    // Produto escalar com valores "mágicos" para espalhar os pontos
+    float d = dot(v, Vector4(12.9898, 78.233, 45.164, 9.456));
+    return std::fmod(std::sin(d) * 43758.5453f, 1.0f);
+}
 
-  if(rec.texture != nullptr) {
+Point3 getStarryBackground(const Vector4& dir) {
+    // 1. Criar um degradê escuro para o céu (Preto -> Azul Marinho)
+    float t = 0.5f * (dir.y + 1.0f);
+    Point3 skyColor = (1.0f - t) * Point3(0.0, 0.0, 0.05) + t * Point3(0.02, 0.02, 0.1);
+
+    // 2. Gerar as estrelas
+    // O hash cria um valor de 0 a 1 para cada direção
+    float starIntensity = hash(dir);
+
+    // Filtro para que apenas alguns pontos brilhem muito (densidade das estrelas)
+    if (starIntensity > 0.996f) { 
+        // Aumenta o brilho da estrela para se destacar do fundo
+        float sparkle = std::pow((starIntensity - 0.998f) / (1.0f - 0.998f), 4.0);
+        return Point3(1.0, 1.0, 1.0) * sparkle;
+    }
+
+    return skyColor;
+}
+
+Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights){
+  Point3 obj_color = rec.obj_ptr->getColor();
+
+  // applying texture
+  if(rec.texture != nullptr && !rec.texture->colors.empty()) {
     float u = rec.uv.x;
     float v = rec.uv.y;
-
     // fixing values that are negative or greater than 1
     u = u - std::floor(u);
     v = v - std::floor(v);
@@ -76,54 +136,61 @@ Point3 setColor(const Vector4 &d, HitRecord rec, const Point4 &light_pos){
     float r_normalized = r / 255.0f;
     float g_normalized = g / 255.0f;
     float b_normalized = b / 255.0f;
-    obj_color.x = mat_dif.x = r_normalized;
-    obj_color.y = mat_dif.y = g_normalized;
-    obj_color.z = mat_dif.z = b_normalized;
+    obj_color.x  = r_normalized;
+    obj_color.y = g_normalized;
+    obj_color.z = b_normalized;
   }
+  Point3 final_color = obj_color * amb_light;
 
-  Point3 mat_spec = rec.obj_ptr->getSpecular();
+  for (const auto& l : lights) {
+    Vector4 light_dir;
+    float dist_to_light;
+    float intensity = 1.0f;
 
-  Point3 amb_color(obj_color.x*amb_light.x, obj_color.y*amb_light.y, obj_color.z*amb_light.z);
+    if (l.type == LightType::DIRECTIONAL) {
+      light_dir = -l.direction; 
+      light_dir.normalize();
+      dist_to_light = 1e6f; // "infinite"
+    } 
+    else if (l.type == LightType::POINTLIGHT || l.type == LightType::SPOTLIGHT) {
+      Vector4 L = l.position - rec.p_int;
+      dist_to_light = L.length();
+      light_dir = L / dist_to_light;
 
-  Vector4 light_dir = light_pos - rec.p_int;
-  float dist_to_light = light_dir.length();
-  light_dir.normalize();
- // Vector4 d_inv = lookFrom - rec.p_int;
- Vector4 d_inv = -d;
-  d_inv.normalize();
+      if (l.type == LightType::SPOTLIGHT) {
+        float theta = dot(l.direction, -light_dir);
+        float epsilon = l.cutoff - l.outer_cutoff;
+        intensity = std::clamp((theta - l.outer_cutoff) / epsilon, 0.0f, 1.0f);
+      }
+    }
 
-  bool on_shadow = false;
-  for(const auto& other : world) {
-    if(other.get() == rec.obj_ptr) continue;
-    HitRecord temp_rec;
-    if(other->Intersect(rec.p_int, light_dir, 0.001f, dist_to_light, temp_rec)){
-      on_shadow = true;
-      break;
+    if (intensity <= 0.0f) continue; // out of the spotlight
+
+    bool on_shadow = false;
+
+    for (const auto& other : world) {
+      if (other.get() == rec.obj_ptr) continue;
+      HitRecord temp_rec;
+      if (other->Intersect(rec.p_int, light_dir, 0.001f, dist_to_light, temp_rec)) {
+        on_shadow = true;
+        break;
+      }
+    }
+
+    if (!on_shadow) {
+      // diffuse
+      float dif_i = std::max(0.f, dot(rec.normal, light_dir)) * intensity;
+      Point3 diff_part = (obj_color * l.color) * dif_i; 
+      final_color = final_color + diff_part;
+
+      // specular
+      Vector4 reflection = reflect(rec.normal, light_dir);
+      float spec_i = std::pow(std::max(0.f, dot(reflection, -d)), 50) * intensity;
+      Point3 spec_part = (rec.obj_ptr->getSpecular() * l.color) * spec_i;
+      final_color = final_color + spec_part;
     }
   }
-  if(on_shadow) return amb_color;
 
-  // diffuse lighting
-  Point3 diff_light(1, 1, 1);
-  float dif_i = std::max(0.f, dot(rec.normal, light_dir));
-  Point3 diff_color(
-    diff_light.x*mat_dif.x*dif_i,
-    diff_light.y*mat_dif.y*dif_i,
-    diff_light.z*mat_dif.z*dif_i
-  );
-
-  // specular lighting
-  Point3 spec_light(1, 1, 1);
-  int brightness = 50; // light scattering factor
-  Vector4 reflection = reflect(rec.normal, light_dir);
-  float spec_i = pow(std::max(0.f, dot(reflection, d_inv)), brightness);
-  Point3 spec_color(
-    spec_light.x*mat_spec.x*spec_i,
-    spec_light.y*mat_spec.y*spec_i,
-    spec_light.z*mat_spec.z*spec_i
-  );
-
-  Point3 final_color(amb_color+diff_color+spec_color);
   final_color.clamp();
   return final_color;
 }
@@ -177,7 +244,7 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
       }
 
       if(hit_anything){
-        Point3 final_color = setColor(ray_dir, rec, lightPos);
+        Point3 final_color = setColor(ray_dir, rec, lights);
         
         int r_int = (int)(final_color.x * 255);
         int g_int = (int)(final_color.y * 255);
@@ -185,7 +252,13 @@ void raycast(std::ofstream &image, int lin_start, int col_start, int width, int 
 
         image << r_int << " " << g_int << " " << b_int << " ";
       } else {
-        image << 100 << " " << 100 << " " << 100 << " ";
+        Point3 starry_night = getStarryBackground(ray_dir);
+
+        int r_int = (int)(starry_night.x * 255);
+        int g_int = (int)(starry_night.y * 255);
+        int b_int = (int)(starry_night.z * 255);
+
+        image << r_int << " " << g_int << " " << b_int << " ";
       }
     }
     image << "\n";
@@ -403,29 +476,298 @@ float random_float2() {
   return distribution(generator);
 }
 
+std::unique_ptr<ListMesh> createMesh(const std::string& objPath, const std::string& texturePath) {
+    std::vector<std::unique_ptr<Point4>> v;
+    std::vector<std::unique_ptr<Vector4>> vn;
+    std::vector<std::unique_ptr<Point3>> vt;
+    std::vector<std::unique_ptr<Triangle>> f;
+    Point4 centroid;
+    AABB aabb;
+
+    auto mesh = std::make_unique<ListMesh>(texturePath);
+
+    read_obj_file(objPath, v, vn, vt, f, centroid, aabb, mesh.get());
+
+    mesh->aabb = std::move(aabb);
+    mesh->faces = std::move(f);
+    mesh->vertices = std::move(v);
+    mesh->centroid = std::move(centroid);
+
+    return mesh;
+}
+
 int main() {
   std::string obj_name = "car_1.obj";
 
-  std::vector<std::unique_ptr<Point4>> v;
-  std::vector<std::unique_ptr<Vector4>> vn;
-  std::vector<std::unique_ptr<Point3>> vt;
-  std::vector<std::unique_ptr<Triangle>> f;
-  Point4 centroid;
-  AABB aabb;
-  std::unique_ptr<ListMesh> cube = std::make_unique<ListMesh>("textures/car_1.ppm");
-  std::unique_ptr<ListMesh> car = std::make_unique<ListMesh>("textures/car_1.ppm");
-  read_obj_file(obj_name, v, vn, vt, f, centroid, aabb, cube.get());
-  cube->aabb = std::move(aabb);
-  cube->faces = std::move(f);
-  cube->vertices = std::move(v);
-  cube->centroid = std::move(centroid);
-  std::cout << "Loaded " << cube->faces.size() << " triangles on object " << obj_name << "\n";
-  
-  cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
-  cube->applyScale(scale(Vector4(0.1, 0.1, 0.1)));
-  cube->aabb.buildBVH(10);
-  world.push_back(std::move(cube));
+  Point3 spec = Point3(0.5f, 0.5f, 0.5f);
+  Point3 low_spec = Point3(0.1f, 0.1f, 0.1f);
 
+  Material lamp_color;
+  lamp_color.color = Point3(1.0f, 0.9f, 0.5f);
+  lamp_color.spec = spec;
+
+  Material post_color;
+  post_color.color = Point3(0.2f, 0.2f, 0.2f);
+  post_color.spec = spec;
+
+  Material road_cone_color;
+  road_cone_color.color = Point3(0.8f, 0.4f, 0.1f);
+  road_cone_color.spec = low_spec;
+
+  Material road_strip_color;
+  road_strip_color.color = Point3(1.0f, 1.0f, 1.0f);
+  road_strip_color.spec = low_spec;
+
+  Light directional;
+  directional.type = LightType::DIRECTIONAL;
+  directional.direction = Vector4(-1.0f, -1.0f, -0.5f);
+  directional.direction.normalize();
+  directional.color = Point3(0.07f, 0.07f, 0.7f); 
+
+  Light post_spot;
+  post_spot.type = LightType::SPOTLIGHT;
+  post_spot.color = Point3(1.0f, 0.9f, 0.0f); 
+  post_spot.position = Point4(-15.0f, 14.5f, 11.0f); 
+  post_spot.direction = Vector4(0.0f, -1.0f, 0.0f); 
+  post_spot.cutoff = std::cos(40.0f * M_PI / 180.0f); 
+  post_spot.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
+
+  Light post_spot2;
+  post_spot2.type = LightType::SPOTLIGHT;
+  post_spot2.color = Point3(1.0f, 0.9f, 0.0f); 
+  post_spot2.position = Point4(20.0f, 14.5f, 11.0f); 
+  post_spot2.direction = Vector4(0.0f, -1.0f, 0.0f); 
+  post_spot2.cutoff = std::cos(40.0f * M_PI / 180.0f); 
+  post_spot2.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
+
+  lights.push_back(directional);
+  lights.push_back(post_spot);
+  lights.push_back(post_spot2);
+
+  // vscode code region
+  #pragma region world objects
+  auto car1 = createMesh("car_1.obj", "textures/car_1.ppm");  
+  
+  car1->applyTranslate(translate(Vector4(-car1->centroid.x, -car1->centroid.y, -car1->centroid.z)));
+  float car_half_height = (car1->aabb.max_y - car1->aabb.min_y) / 2.0f;
+  car1->applyTranslate(translate(Vector4(0.0f, car_half_height, 0.0f)));
+  car1->applyScale(scale(Vector4(0.1, 0.1, 0.1)));
+  car1->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+
+  auto car2 = createMesh("car_1.obj", "textures/car_1.ppm");
+  
+  car2->applyTranslate(translate(Vector4(-car2->centroid.x, -car2->centroid.y, -car2->centroid.z)));
+  car2->applyTranslate(translate(Vector4(0.0f, car_half_height, 55.0f)));
+  car2->applyScale(scale(Vector4(0.1f, 0.1f, 0.1f)));
+  car2->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+
+  auto car3 = createMesh("car_1.obj", "textures/car_1.ppm");
+  
+  car3->applyTranslate(translate(Vector4(-car3->centroid.x, -car3->centroid.y, -car3->centroid.z)));
+  car3->applyTranslate(translate(Vector4(0.0f, car_half_height, 110.0f)));
+  car3->applyScale(scale(Vector4(0.1f, 0.1f, 0.1f)));
+  car3->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+
+  auto cube = createMesh("cube.obj", "");
+
+  cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
+  cube->applyScale(scale(Vector4(25.0f, 8.0f, 10.0f)));
+  float half_cube_height = (cube->aabb.max_y - cube->aabb.min_y) / 2.0f;
+  cube->applyTranslate(translate(Vector4(0.0f, half_cube_height, -25.0f)));
+
+  for(auto& face : cube->faces){
+    face->reflectivity = 1.0f;
+  }
+
+  auto shop = createMesh("loja.obj", "textures/loja.ppm");
+
+  shop->applyTranslate(translate(Vector4(-shop->centroid.x, -shop->centroid.y, -shop->centroid.z)));
+  shop->applyScale(scale(Vector4(6.0f, 10.0f, 5.0f)));
+  shop->applyRotation(rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
+  float half_shop_height = (shop->aabb.max_y - shop->aabb.min_y) / 2.0f;
+  shop->applyTranslate(translate(Vector4(0.0f, half_shop_height, -25.0f)));
+
+  auto road = createMesh("cube.obj", "");
+
+  road->applyTranslate(translate(Vector4(-road->centroid.x, -road->centroid.y, -road->centroid.z)));
+  road->applyScale(scale(Vector4(60.0f, 0.01f, 10.0f)));
+  float half_road_height = (road->aabb.max_y - road->aabb.min_y) / 2.0f;
+  road->applyTranslate(translate(Vector4(0.0f, half_road_height, 20.0f)));
+
+  #pragma region road strips
+  auto road_strip1 = createMesh("cube.obj", "");
+
+  road_strip1->applyTranslate(translate(Vector4(-road_strip1->centroid.x, -road_strip1->centroid.y, -road_strip1->centroid.z)));
+  road_strip1->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
+  road_strip1->applyTranslate(translate(Vector4(0.0f, half_road_height + 0.01f, 20.0f)));
+
+  for(auto& face : road_strip1->faces){
+    face->color = Point3(1.0f, 1.0f, 1.0f);
+    face->dif_color = Point3(1.0f, 1.0f, 1.0f);
+  }
+  
+  auto road_strip2 = createMesh("cube.obj", "");
+
+  road_strip2->applyTranslate(translate(Vector4(-road_strip2->centroid.x, -road_strip2->centroid.y, -road_strip2->centroid.z)));
+  road_strip2->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
+  road_strip2->applyTranslate(translate(Vector4(12.0f, half_road_height + 0.01f, 20.0f)));
+
+  for(auto& face : road_strip2->faces){
+    face->color = Point3(1.0f, 1.0f, 1.0f);
+    face->dif_color = Point3(1.0f, 1.0f, 1.0f);
+  }
+
+  auto road_strip3 = createMesh("cube.obj", "");
+
+  road_strip3->applyTranslate(translate(Vector4(-road_strip3->centroid.x, -road_strip3->centroid.y, -road_strip3->centroid.z)));
+  road_strip3->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
+  road_strip3->applyTranslate(translate(Vector4(24.0f, half_road_height + 0.01f, 20.0f)));
+
+  for(auto& face : road_strip3->faces){
+    face->color = Point3(1.0f, 1.0f, 1.0f);
+    face->dif_color = Point3(1.0f, 1.0f, 1.0f);
+  }
+
+  auto road_strip4 = createMesh("cube.obj", "");
+
+  road_strip4->applyTranslate(translate(Vector4(-road_strip4->centroid.x, -road_strip4->centroid.y, -road_strip4->centroid.z)));
+  road_strip4->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
+  road_strip4->applyTranslate(translate(Vector4(36.0f, half_road_height + 0.01f, 20.0f)));
+
+  for(auto& face : road_strip4->faces){
+    face->color = Point3(1.0f, 1.0f, 1.0f);
+    face->dif_color = Point3(1.0f, 1.0f, 1.0f);
+  }
+
+  auto road_strip5 = createMesh("cube.obj", "");
+
+  road_strip5->applyTranslate(translate(Vector4(-road_strip5->centroid.x, -road_strip5->centroid.y, -road_strip5->centroid.z)));
+  road_strip5->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
+  road_strip5->applyTranslate(translate(Vector4(-12.0f, half_road_height + 0.01f, 20.0f)));
+
+  for(auto& face : road_strip5->faces){
+    face->color = Point3(1.0f, 1.0f, 1.0f);
+    face->dif_color = Point3(1.0f, 1.0f, 1.0f);
+  }
+
+  auto road_strip6 = createMesh("cube.obj", "");
+
+  road_strip6->applyTranslate(translate(Vector4(-road_strip6->centroid.x, -road_strip6->centroid.y, -road_strip6->centroid.z)));
+  road_strip6->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
+  road_strip6->applyTranslate(translate(Vector4(-24.0f, half_road_height + 0.01f, 20.0f)));
+
+  for(auto& face : road_strip6->faces){
+    face->color = Point3(1.0f, 1.0f, 1.0f);
+    face->dif_color = Point3(1.0f, 1.0f, 1.0f);
+  }
+  #pragma endregion
+
+  auto post_base = std::make_unique<Cylinder>(Point4(-15.0f, 0.0f, 5.0f), 15.0f, 1.0f, Vector4(0.0f, 1.0f, 0.0f), true, true, 
+                                              post_color.color, 
+                                              post_color.color,
+                                              post_color.spec);
+  auto post_arm = std::make_unique<Cylinder>(Point4(-15.0f, 16.0f, 4.0f), 6.0f, 1.0f, Vector4(0.0f, 0.0f, 1.0f), true, true,
+                                              post_color.color,
+                                              post_color.color,
+                                              post_color.spec);
+  auto lamp = std::make_unique<Sphere>(Point4(-15.0f, 16.0f, 11.0f), 1.0f,
+                                        lamp_color.color,
+                                        lamp_color.color,
+                                        lamp_color.spec);
+
+  auto post_base2 = std::make_unique<Cylinder>(Point4(20.0f, 0.0f, 5.0f), 15.0f, 1.0f, Vector4(0.0f, 1.0f, 0.0f), true, true, 
+                                              post_color.color, 
+                                              post_color.color,
+                                              post_color.spec);
+  auto post_arm2 = std::make_unique<Cylinder>(Point4(20.0f, 16.0f, 5.0f), 6.0f, 1.0f, Vector4(0.0f, 0.0f, 1.0f), true, true,
+                                              post_color.spec,
+                                              post_color.spec,
+                                              post_color.spec);
+  auto lamp2 = std::make_unique<Sphere>(Point4(20.0f, 16.0f, 11.0f), 1.0f,
+                                        lamp_color.color,
+                                        lamp_color.color,
+                                        lamp_color.spec);
+  
+  #pragma region road cones
+  auto road_cone1 = std::make_unique<Cone>(Point4(0.0f, 0.0f, 10.0f), 5.0f, true, Point4(0.0f, 2.0f, 10.0f),
+                                          road_cone_color.color,
+                                          road_cone_color.color,
+                                          road_cone_color.spec);
+
+  auto road_cone_base1 = createMesh("cube.obj", "");
+
+  road_cone_base1->applyTranslate(translate(Vector4(-road_cone_base1->centroid.x, -road_cone_base1->centroid.y, -road_cone_base1->centroid.z)));
+  road_cone_base1->applyScale(scale(Vector4(1.0f, 0.02f, 1.0f)));
+  float half_base_height = (road_cone_base1->aabb.max_y - road_cone_base1->aabb.min_y) / 2.0f;
+  road_cone_base1->applyTranslate(translate(Vector4(0.0f, half_base_height, 10.0f)));
+
+  for(auto& face : road_cone_base1->faces){
+    face->color = road_cone_color.color;
+    face->dif_color = road_cone_color.color;
+    face->spec_color = road_cone_color.spec;
+  }
+
+  auto road_cone2 = std::make_unique<Cone>(Point4(5.0f, 0.0f, 10.0f), 5.0f, true, Point4(5.0f, 2.0f, 10.0f),
+                                          road_cone_color.color,
+                                          road_cone_color.color,
+                                          road_cone_color.spec);
+
+  auto road_cone_base2 = createMesh("cube.obj", "");
+
+  road_cone_base2->applyTranslate(translate(Vector4(-road_cone_base2->centroid.x, -road_cone_base2->centroid.y, -road_cone_base2->centroid.z)));
+  road_cone_base2->applyScale(scale(Vector4(1.0f, 0.02f, 1.0f)));
+  road_cone_base2->applyTranslate(translate(Vector4(5.0f, half_base_height, 10.0f)));
+
+  for(auto& face : road_cone_base2->faces){
+    face->color = road_cone_color.color;
+    face->dif_color = road_cone_color.color;
+    face->spec_color = road_cone_color.spec;
+  }
+
+  auto road_cone3 = std::make_unique<Cone>(Point4(-5.0f, 0.0f, 10.0f), 5.0f, true, Point4(-5.0f, 2.0f, 10.0f),
+                                          road_cone_color.color,
+                                          road_cone_color.color,
+                                          road_cone_color.spec);
+
+  auto road_cone_base3 = createMesh("cube.obj", "");
+
+  road_cone_base3->applyTranslate(translate(Vector4(-road_cone_base3->centroid.x, -road_cone_base3->centroid.y, -road_cone_base3->centroid.z)));
+  road_cone_base3->applyScale(scale(Vector4(1.0f, 0.02f, 1.0f)));
+  road_cone_base3->applyTranslate(translate(Vector4(-5.0f, half_base_height, 10.0f)));
+
+  for(auto& face : road_cone_base3->faces){
+    face->color = road_cone_color.color;
+    face->dif_color = road_cone_color.color;
+    face->spec_color = road_cone_color.spec;
+  }
+  #pragma endregion
+  
+  world.push_back(std::move(car1));
+  world.push_back(std::move(car2));
+  world.push_back(std::move(car3));
+  world.push_back(std::move(shop));
+  world.push_back(std::move(road));
+  world.push_back(std::move(road_strip1));
+  world.push_back(std::move(road_strip2));
+  world.push_back(std::move(road_strip3));
+  world.push_back(std::move(road_strip4));
+  world.push_back(std::move(road_strip5));
+  world.push_back(std::move(road_strip6));
+  world.push_back(std::move(post_base));
+  world.push_back(std::move(post_arm));
+  world.push_back(std::move(lamp));
+  world.push_back(std::move(post_base2));
+  world.push_back(std::move(post_arm2));
+  world.push_back(std::move(lamp2));
+  world.push_back(std::move(road_cone1));
+  world.push_back(std::move(road_cone2));
+  world.push_back(std::move(road_cone3));
+  world.push_back(std::move(road_cone_base1));
+  world.push_back(std::move(road_cone_base2));
+  world.push_back(std::move(road_cone_base3));
+  #pragma endregion
+
+  // vscode code region
   #pragma region plains
   Point3 specular_plains(.1, .1, .1);
   Point3 back_wall_col(.9, .3, .5);
@@ -434,109 +776,54 @@ int main() {
   Point3 right_wall_col(.6, .2, .7);
   Point3 ceiling_col(.2, .2, .9);
   Point3 floor_col(.9, .5, 0);
-  Plain back_wall(Point4(0, 0, -200), Vector4(0, 0, 1), back_wall_col, back_wall_col, specular_plains);
-  Plain front_wall(Point4(0, 0, 100), Vector4(0, 0, -1), front_wall_col, front_wall_col, specular_plains);
-  Plain left_wall(Point4(-100, 0, 0), Vector4(1, 0, 0), left_wall_col, left_wall_col, specular_plains);
-  Plain right_wall(Point4(100, 0, 0), Vector4(-1, 0, 0), right_wall_col, right_wall_col, specular_plains);
-  Plain ceiling(Point4(0, 100, 0), Vector4(0, -1, 0), ceiling_col, ceiling_col, specular_plains);
-  Plain floor(Point4(0, -50, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains);
-
-  world.push_back(std::make_unique<Plain>(back_wall));
-  world.push_back(std::make_unique<Plain>(front_wall));
-  world.push_back(std::make_unique<Plain>(left_wall));
-  world.push_back(std::make_unique<Plain>(right_wall));
-  world.push_back(std::make_unique<Plain>(ceiling));
-  world.push_back(std::make_unique<Plain>(floor));
+  
+  // // back wall
+  // world.push_back(std::make_unique<Plain>(Point4(0, 0, -200), Vector4(0, 0, 1), back_wall_col, back_wall_col, specular_plains));
+  // // front wall
+  // world.push_back(std::make_unique<Plain>(Point4(0, 0, 100), Vector4(0, 0, -1), front_wall_col, front_wall_col, specular_plains));
+  // // left wall
+  // world.push_back(std::make_unique<Plain>(Point4(-100, 0, 0), Vector4(1, 0, 0), left_wall_col, left_wall_col, specular_plains));
+  // // right wall
+  // world.push_back(std::make_unique<Plain>(Point4(100, 0, 0), Vector4(-1, 0, 0), right_wall_col, right_wall_col, specular_plains));
+  // // ceiling
+  // world.push_back(std::make_unique<Plain>(Point4(0, 100, 0), Vector4(0, -1, 0), ceiling_col, ceiling_col, specular_plains));
+  // floor
+  world.push_back(std::make_unique<Plain>(Point4(0, 0, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains));
   #pragma endregion
 
-  w = (lookFrom - lookAt); // Vetor apontando para trás
+  w = (lookFrom - lookAt); 
   w.normalize();
-
-  u = cross(vUp, w); // Vetor apontando para a direita
+  u = cross(vUp, w); 
   u.normalize();
-
   v_cam = cross(w, u);
 
-  float raio = 20.0f; // Distância da câmera ao cubo
-  float altura_camera = 5.0f;
-  float altura_luz = 20.0f;
-
-  int frames = 1;
-  float x = random_float2();
-  float y = random_float2();
-  float z = random_float2();
   auto full_start = std::chrono::high_resolution_clock::now();
-  int cima_ou_baixo = -1;
+  int frames = 1;
+  
   for(int i = 0; i < frames; i++){
-    auto start = std::chrono::high_resolution_clock::now();
+      auto start = std::chrono::high_resolution_clock::now();
 
-    std::string image_name = "frames/";
-    if(i < 10) image_name += "frame_00" + std::to_string(i);
-    else if(i < 100) image_name += "frame_0" + std::to_string(i);
-    else image_name += "frame_" + std::to_string(i);
-    image_name += ".ppm";
-    std::ofstream image(image_name);
+      std::string image_name = "frames/frame_";
+      if(i < 10) image_name += "00";
+      else if(i < 100) image_name += "0";
+      image_name += std::to_string(i) + ".ppm";
+      
+      std::ofstream image(image_name);
 
-    if((i+1) % 30 == 0){
-      x = random_float2();
-      y = random_float2();
-      z = random_float2();
-    }
-    float theta = (2.0f * 3.14159f * i) / frames;
+      if(image.is_open()) {
+          image << "P3\n" << nCol << " " << nLin << "\n255\n";
+          raycast(image, 0, 0, nCol, nLin);
+          image.close();
+      }
 
-    float novo_x = lookAt.x + raio * std::sin(theta);
-    float novo_z = lookAt.z + raio * std::cos(theta);
-    float novo_y = lookAt.y + altura_camera;
-
-    //altura_camera += cima_ou_baixo*0.5f;
-    //altura_luz += cima_ou_baixo;
-    if(altura_camera < -5.0f || altura_camera > 5.0f) cima_ou_baixo *= -1;
-
-    lookFrom = Point4(novo_x, novo_y, novo_z);
-
-    w = (lookFrom - lookAt);
-    w.normalize();
-
-    u = cross(vUp, w);
-    u.normalize();
-
-    v_cam = cross(w, u);
-
-    // transforming the cube
-    //cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
-    //cube->applyRotation(rotate(Vector4(x, y, z, 0), 3.1416/64));
-    //cube->applyScale(scale(Vector4(4, 4, 4)));
-    //cube->applyTranslate(translate(Vector4(cube->centroid.x, cube->centroid.y, cube->centroid.z)));
-    //std::cout << cube->centroid.x << " " << cube->centroid.y << " " << cube->centroid.z << "\n";
-
-    // putting the transformed cube in the world
-    //world.push_back(std::move(cube));
-
-    // rendering
-    if(image.is_open()) {
-      image << "P3\n";
-      image << nCol << " " << nLin << "\n";
-      image << 255 << "\n";
-
-      raycast(image, 0, 0, nCol, nLin);
-
-      image.close();
-    }
-
-    auto stop = std::chrono::high_resolution_clock::now();
-
-    std::chrono::duration<double> elapsed = stop - start;
-
-    std::cout << "Frame " << i+1 << " out of " << frames << " rendered in " << elapsed.count() << " seconds.\n";
-
-    // creating a pointer to the transformed cube
-    //std::unique_ptr<Object> temp_generic = std::move(world.back());
-    // giving the ownership back to cube
-    //cube.reset(static_cast<ListMesh*>(temp_generic.release()));
-    // getting the cube out of world so theres always only one cube
-    //world.pop_back();
+      auto stop = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> elapsed = stop - start;
+      std::cout << "Frame " << i+1 << " rendered in " << elapsed.count() << " seconds.\n";
   }
+
   auto full_stop = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> elapsed = full_stop - full_start;
-  std::cout << elapsed.count() << " seconds to render " << frames << " frames.\n";
+  std::chrono::duration<double> elapsed_total = full_stop - full_start;
+  std::cout << "Total time: " << elapsed_total.count() << " seconds.\n";
+
+  return 0;
 }

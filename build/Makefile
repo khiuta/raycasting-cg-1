@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/luis/Programming/computer_graphics/raycasting-cg-1
+CMAKE_SOURCE_DIR = /home/poguel/Documents/raycasting-cg-1
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/luis/Programming/computer_graphics/raycasting-cg-1/build
+CMAKE_BINARY_DIR = /home/poguel/Documents/raycasting-cg-1/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/luis/Programming/computer_graphics/raycasting-cg-1/build/CMakeFiles /home/luis/Programming/computer_graphics/raycasting-cg-1/build//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/poguel/Documents/raycasting-cg-1/build/CMakeFiles /home/poguel/Documents/raycasting-cg-1/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/luis/Programming/computer_graphics/raycasting-cg-1/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/poguel/Documents/raycasting-cg-1/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -152,6 +152,54 @@ src/implementations/AABB.s: src/implementations/AABB.cpp.s
 src/implementations/AABB.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/AABB.cpp.s
 .PHONY : src/implementations/AABB.cpp.s
+
+src/implementations/Cone.o: src/implementations/Cone.cpp.o
+.PHONY : src/implementations/Cone.o
+
+# target to build an object file
+src/implementations/Cone.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Cone.cpp.o
+.PHONY : src/implementations/Cone.cpp.o
+
+src/implementations/Cone.i: src/implementations/Cone.cpp.i
+.PHONY : src/implementations/Cone.i
+
+# target to preprocess a source file
+src/implementations/Cone.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Cone.cpp.i
+.PHONY : src/implementations/Cone.cpp.i
+
+src/implementations/Cone.s: src/implementations/Cone.cpp.s
+.PHONY : src/implementations/Cone.s
+
+# target to generate assembly for a file
+src/implementations/Cone.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Cone.cpp.s
+.PHONY : src/implementations/Cone.cpp.s
+
+src/implementations/Cylinder.o: src/implementations/Cylinder.cpp.o
+.PHONY : src/implementations/Cylinder.o
+
+# target to build an object file
+src/implementations/Cylinder.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Cylinder.cpp.o
+.PHONY : src/implementations/Cylinder.cpp.o
+
+src/implementations/Cylinder.i: src/implementations/Cylinder.cpp.i
+.PHONY : src/implementations/Cylinder.i
+
+# target to preprocess a source file
+src/implementations/Cylinder.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Cylinder.cpp.i
+.PHONY : src/implementations/Cylinder.cpp.i
+
+src/implementations/Cylinder.s: src/implementations/Cylinder.cpp.s
+.PHONY : src/implementations/Cylinder.s
+
+# target to generate assembly for a file
+src/implementations/Cylinder.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Cylinder.cpp.s
+.PHONY : src/implementations/Cylinder.cpp.s
 
 src/implementations/ListMesh.o: src/implementations/ListMesh.cpp.o
 .PHONY : src/implementations/ListMesh.o
@@ -357,6 +405,12 @@ help:
 	@echo "... src/implementations/AABB.o"
 	@echo "... src/implementations/AABB.i"
 	@echo "... src/implementations/AABB.s"
+	@echo "... src/implementations/Cone.o"
+	@echo "... src/implementations/Cone.i"
+	@echo "... src/implementations/Cone.s"
+	@echo "... src/implementations/Cylinder.o"
+	@echo "... src/implementations/Cylinder.i"
+	@echo "... src/implementations/Cylinder.s"
 	@echo "... src/implementations/ListMesh.o"
 	@echo "... src/implementations/ListMesh.i"
 	@echo "... src/implementations/ListMesh.s"
