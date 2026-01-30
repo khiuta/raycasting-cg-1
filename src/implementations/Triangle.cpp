@@ -59,14 +59,21 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   this->spec_color = Point3(.7, .7, .7);
 }
 
+// ... (includes e código anterior mantém igual) ...
+
 bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const {
   if(dot(normal, dir) >= 0) return false;
+  
   float denominator = dot(this->normal, dir);
   double t = 0;
+
   if(std::abs(denominator) > 0.0001f){
     Vector4 p1_to_origin = this->p1 - origin;
     t = dot(p1_to_origin, this->normal)/denominator; 
   } else return false;
+
+  // Verifica intervalo válido antes de cálculos pesados
+  if (t <= t_min || t >= t_max) return false;
 
   Point4 p_int = origin + t*dir;
 
@@ -80,31 +87,57 @@ bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
 
   if(c1 < 0 || c2 < 0 || c3 < 0){
     return false;
-  } else {
-    if(t > t_min && t < t_max){
-      hr.normal = this->normal;
+  } 
 
-      if(dot(hr.normal, dir) > 0){
-        hr.normal = -hr.normal;
+  // --- LÓGICA DE TEXTURA E TRANSPARÊNCIA ---
+  
+  Point3 uv;
+  // Interpolação baricêntrica das coordenadas de textura
+  uv.x = c3*vt1.x + c1*vt2.x + c2*vt3.x;
+  uv.y = c3*vt1.y + c1*vt2.y + c2*vt3.y;
+
+  // Se houver uma malha e uma textura associada, verificamos o Alpha
+  if (this->mesh != nullptr && this->mesh->texture != nullptr && !this->mesh->texture->colors.empty()) {
+      Texture* tex = this->mesh->texture;
+      
+      float u_val = uv.x - std::floor(uv.x);
+      float v_val = 1.0f - (uv.y - std::floor(uv.y)); // Invertendo V (padrão OpenGL)
+
+      int tex_u = (int)(u_val * (tex->width - 1));
+      int tex_v = (int)(v_val * (tex->height - 1));
+
+      // Clamp por segurança
+      tex_u = std::max(0, std::min(tex_u, tex->width - 1));
+      tex_v = std::max(0, std::min(tex_v, tex->height - 1));
+
+      // Pegamos o canal Alfa (o quarto elemento da tupla: índice 3)
+      uint8_t alpha = std::get<3>(tex->colors[tex_v][tex_u]);
+
+      // Limiar de transparência (Cutout threshold)
+      // Se for muito transparente (< 10 de 255), ignoramos a colisão
+      if (alpha < 10) {
+          return false; // O raio passa direto!
       }
-      hr.t = t;
-      hr.p_int = p_int;
-      hr.obj_ptr = this;
-
-      Point3 uv;
-      uv.x = c3*vt1.x + c1*vt2.x + c2*vt3.x;
-      uv.y = c3*vt1.y + c1*vt2.y + c2*vt3.y;
-
-      hr.uv = uv;
-      hr.texture = this->mesh->texture;
-
-      hr.reflectivity = this->reflectivity;
-    } else return false;
-
-    return true;
   }
-}
 
+  // Se chegou aqui, colidiu com algo sólido
+  hr.normal = this->normal;
+  if(dot(hr.normal, dir) > 0){
+    hr.normal = -hr.normal;
+  }
+  hr.t = t;
+  hr.p_int = p_int;
+  hr.obj_ptr = this;
+  hr.uv = uv;
+  
+  if (this->mesh != nullptr) {
+      hr.texture = this->mesh->texture;
+  } else {
+      hr.texture = nullptr;
+  }
+
+  return true;
+}
 void Triangle::applyTranslate(const Matrix4 &m){
   Vector4 newP1 = m * Vector4(p1.x, p1.y, p1.z, 1.0f);
   Vector4 newP2 = m * Vector4(p2.x, p2.y, p2.z, 1.0f);
