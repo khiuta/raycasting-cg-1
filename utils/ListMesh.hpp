@@ -27,6 +27,7 @@ class ListMesh : public Object {
     void applyTranslate(const Matrix4 &m);
     void applyScale(const Matrix4 &m);
     void applyRotation(const Matrix4 &m);
+    void applyShear(const Matrix4 &m);
 
     const Point3& getColor() const override { return Point3(0, 0, 0); };
     const Point3& getDiffuse() const override { return Point3(0, 0, 0); };

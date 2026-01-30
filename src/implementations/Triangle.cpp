@@ -164,3 +164,28 @@ void Triangle::applyRotation(const Matrix4 &m){
 
   this->area = cross(this->e1, -this->e3).length() / 2.0;
 }
+
+void Triangle::applyShear(const Matrix4 &m) {
+    // Aplica a matriz de cisalhamento aos vértices (w = 1.0f)
+    Vector4 newP1 = m * Vector4(p1.x, p1.y, p1.z, 1.0f);
+    Vector4 newP2 = m * Vector4(p2.x, p2.y, p2.z, 1.0f);
+    Vector4 newP3 = m * Vector4(p3.x, p3.y, p3.z, 1.0f);
+
+    p1 = Point4(newP1.x, newP1.y, newP1.z, 1.0f);
+    p2 = Point4(newP2.x, newP2.y, newP2.z, 1.0f);
+    p3 = Point4(newP3.x, newP3.y, newP3.z, 1.0f);
+
+    // Recalcula as arestas com as novas posições
+    this->e1 = p2 - p1;
+    this->e2 = p3 - p2;
+    this->e3 = p3 - p1;
+
+    // Para a normal (w = 0.0f), o cisalhamento exige cuidado.
+    // Idealmente usa-se a transposta da inversa para normais, 
+    // mas se a matriz m for apenas o cisalhamento puro:
+    Vector4 newNormal = m * Vector4(normal.x, normal.y, normal.z, 0.0f);
+    this->normal = normalize(newNormal);
+
+    // Recalcula a área, pois o cisalhamento altera a geometria
+    this->area = cross(this->e1, -this->e3).length() / 2.0;
+}

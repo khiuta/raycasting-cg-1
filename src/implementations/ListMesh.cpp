@@ -79,3 +79,10 @@ void ListMesh::applyRotation(const Matrix4 &m) {
   for(auto& t : faces) t->applyRotation(m);
   rebuildStructures();
 }
+
+void ListMesh::applyShear(const Matrix4 &m) {
+  for(auto& t : faces) {
+    t->applyShear(m);
+  }
+  rebuildStructures();
+}

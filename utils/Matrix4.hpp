@@ -56,5 +56,6 @@ class Matrix4 {
 Matrix4 translate(const Vector4 &v);
 Matrix4 scale(const Vector4 &v);
 Matrix4 rotate(const Vector4 &v, float theta);
+Matrix4 shear(const Vector4 &v1, const Vector4 &v2);
 
 #endif

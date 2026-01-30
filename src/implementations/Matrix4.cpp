@@ -39,3 +39,18 @@ Matrix4 rotate(const Vector4 &v, float theta){
   
   return m_rotation;
 }
+
+Matrix4 shear(const Vector4 &v1, const Vector4 &v2) {
+    Matrix4 m;
+
+    m.cols[1].x = v1.x;
+    m.cols[2].x = v1.y;
+
+    m.cols[0].y = v1.z;
+    m.cols[2].y = v2.x;
+
+    m.cols[0].z = v2.y;
+    m.cols[1].z = v2.z;
+
+    return m;
+}

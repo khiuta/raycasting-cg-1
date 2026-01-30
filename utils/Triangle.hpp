@@ -25,6 +25,7 @@ class Triangle : public Object {
     void applyTranslate(const Matrix4 &m);
     void applyScale(const Matrix4 &m);
     void applyRotation(const Matrix4 &m);
+    void applyShear(const Matrix4 &m);
 
     const Vector4 getNormal() const { return normal; };
 
