@@ -12,6 +12,7 @@ class Object {
     virtual const Point3& getColor() const = 0;
     virtual const Point3& getDiffuse() const = 0;
     virtual const Point3& getSpecular() const = 0;
+    
+    virtual float getReflectivity() const { return 0.0f; }
 };
-
 #endif

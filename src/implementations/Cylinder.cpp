@@ -13,16 +13,12 @@ Cylinder::Cylinder(Point4 c_base, float h, float r, Vector4 dc, bool b_lid, bool
 bool Cylinder::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const {
     Vector4 w = origin - baseCenter;
 
-    // Substituindo a Matriz M por álgebra vetorial direta:
-    // a = (dir - (dir.dc)dc)²
     Vector4 dir_proj = dir - direction * dot(dir, direction);
     float a = dot(dir_proj, dir_proj);
-    
-    // b = 2 * (dir - (dir.dc)dc) . (w - (w.dc)dc)
+
     Vector4 w_proj = w - direction * dot(w, direction);
     float b = 2.0f * dot(dir_proj, w_proj);
-    
-    // c = (w - (w.dc)dc)² - r²
+
     float c = dot(w_proj, w_proj) - radius * radius;
 
     float disc = b * b - 4.0f * a * c;
@@ -35,7 +31,6 @@ bool Cylinder::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
     float t_hit = -1.0f;
     Vector4 final_normal;
 
-    // Testar o t mais próximo primeiro (t1)
     for (float t : {t1, t2}) {
         if (t < t_min || t > t_max) continue;
 
@@ -45,15 +40,12 @@ bool Cylinder::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
 
         if (projection >= 0 && projection <= height) {
             t_hit = t;
-            // Normal do corpo: P - (Cb + proj*dc)
             final_normal = p_int - (baseCenter + direction * projection);
             final_normal.normalize();
             break;
         }
     }
 
-    // Verificação das tampas (Lids)
-    // Tampa de baixo
     if (bottom_lid) {
         float t_b = dot(baseCenter - origin, direction) / dot(dir, direction);
         if (t_b > t_min && t_b < t_max && (t_hit < 0 || t_b < t_hit)) {
@@ -65,7 +57,6 @@ bool Cylinder::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
         }
     }
 
-    // Tampa de cima
     if (upper_lid) {
         Point4 topCenter = baseCenter + direction * height;
         float t_u = dot(topCenter - origin, direction) / dot(dir, direction);
@@ -83,7 +74,7 @@ bool Cylinder::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
         hr.p_int = origin + dir * t_hit;
         hr.normal = final_normal;
         hr.obj_ptr = this;
-        // Se batermos por dentro, invertemos a normal
+        
         if (dot(hr.normal, dir) > 0) hr.normal = -hr.normal;
         return true;
     }

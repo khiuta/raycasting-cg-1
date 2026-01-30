@@ -273,6 +273,30 @@ src/implementations/Plain.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Plain.cpp.s
 .PHONY : src/implementations/Plain.cpp.s
 
+src/implementations/Rectangle.o: src/implementations/Rectangle.cpp.o
+.PHONY : src/implementations/Rectangle.o
+
+# target to build an object file
+src/implementations/Rectangle.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Rectangle.cpp.o
+.PHONY : src/implementations/Rectangle.cpp.o
+
+src/implementations/Rectangle.i: src/implementations/Rectangle.cpp.i
+.PHONY : src/implementations/Rectangle.i
+
+# target to preprocess a source file
+src/implementations/Rectangle.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Rectangle.cpp.i
+.PHONY : src/implementations/Rectangle.cpp.i
+
+src/implementations/Rectangle.s: src/implementations/Rectangle.cpp.s
+.PHONY : src/implementations/Rectangle.s
+
+# target to generate assembly for a file
+src/implementations/Rectangle.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/implementations/Rectangle.cpp.s
+.PHONY : src/implementations/Rectangle.cpp.s
+
 src/implementations/Sphere.o: src/implementations/Sphere.cpp.o
 .PHONY : src/implementations/Sphere.o
 
@@ -420,6 +444,9 @@ help:
 	@echo "... src/implementations/Plain.o"
 	@echo "... src/implementations/Plain.i"
 	@echo "... src/implementations/Plain.s"
+	@echo "... src/implementations/Rectangle.o"
+	@echo "... src/implementations/Rectangle.i"
+	@echo "... src/implementations/Rectangle.s"
 	@echo "... src/implementations/Sphere.o"
 	@echo "... src/implementations/Sphere.i"
 	@echo "... src/implementations/Sphere.s"
