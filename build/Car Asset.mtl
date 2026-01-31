@@ -1,0 +1,22 @@
+# Blender 4.0.2 MTL File: 'Car Asset.blend'
+# www.blender.org
+
+newmtl Black_Car_Mat
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.010363 0.010363 0.010363
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd /home/luis/Downloads/Textures/5Car 1_Car 1 mat_Diffuse.png
+map_Ke /home/luis/Downloads/Textures/Emissive.png
+
+newmtl carwindows
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.250000 0.250000 0.250000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 0.200000
+illum 9
+map_Kd /home/luis/Downloads/Textures/4Car 1_Car 1 mat_Diffuse.png
