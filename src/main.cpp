@@ -342,7 +342,7 @@ void fill_xyz(std::string line, float &x, float &y, float &z){
   }
 }
 
-void read_obj_file(const std::string& filename,
+  void read_obj_file(const std::string& filename,
                    std::vector<std::unique_ptr<Point4>> &v,
                    std::vector<std::unique_ptr<Vector4>> &vn,
                    std::vector<std::unique_ptr<Point3>> &vt,
@@ -350,85 +350,160 @@ void read_obj_file(const std::string& filename,
                    Point4 &centroid,
                    AABB &aabb,
                    ListMesh *mesh){
-    std::ifstream file(filename);
-    if(!file.is_open()) {
-        std::cerr << "ERROR: There was a problem opening the file " << filename << ".\n";
-        return;
-    }
-    std::string line;
-    float max_x, min_x, max_y, min_y, max_z, min_z;
-    bool first_vertice = true;
-    while(std::getline(file, line)){
-        if(line[0] == 'v'){
-            if(line[1] == ' '){
-                float x, y, z;
-                fill_xyz(line, x, y, z);
-                if(first_vertice){ min_x = max_x = x; min_y = max_y = y; min_z = max_z = z; first_vertice = false; } 
-                else {
-                    if(x < min_x) min_x = x; if(x > max_x) max_x = x;
-                    if(y < min_y) min_y = y; if(y > max_y) max_y = y;
-                    if(z < min_z) min_z = z; if(z > max_z) max_z = z;
-                }
-                v.push_back(std::make_unique<Point4>(x, y, z, 1));
-            } else if(line[1] == 'n'){
-                float x, y, z; fill_xyz(line, x, y, z);
-                vn.push_back(std::make_unique<Vector4>(x, y, z, 0));
-            } else if(line[1] == 't'){
-                float x, y, z = 0; fill_xyz(line, x, y, z);
-                vt.push_back(std::make_unique<Point3>(x, y, z));
-            }
-        } else if(line[0] == 'f'){
-            int point_control = 0; int vertex_control = 0;
-            int vertex_indices[4] = {0, 0, 0, -1};
-            int tex_vertex_indices[4] = {0, 0, 0, 0};
-            int nor_vertex_indices[4] = {0, 0, 0, 0};
-            for(int i = 2; i < line.size(); i++){
-                if(line[i] == ' ') { point_control++; vertex_control = 0; }
-                if(line[i] == '/') vertex_control++;
-                if(line[i] >= 48 && line[i] <= 57){
-                    int k = i; std::string digit;
-                    while(line[k] >= 48 && line[k] <= 57){ digit += line[k]; k++; }
-                    if(vertex_control == 0) vertex_indices[point_control] = std::stoi(digit) - 1;
-                    else if(vertex_control == 1) tex_vertex_indices[point_control] = std::stoi(digit) - 1;
-                    else if(vertex_control == 2) nor_vertex_indices[point_control] = std::stoi(digit) - 1;
-                    i = k - 1;
-                }
-            }
-            if(vertex_indices[3] != -1){
-                Point4 p1 = *v[vertex_indices[0]]; Point4 p2 = *v[vertex_indices[1]]; Point4 p3 = *v[vertex_indices[2]]; Point4 p4 = *v[vertex_indices[3]];
-                Vector4 normal = *vn[nor_vertex_indices[0]];
-                if(vt.size() > 0){
-                    Point3 vt1 = *vt[tex_vertex_indices[0]]; Point3 vt2 = *vt[tex_vertex_indices[1]]; Point3 vt3 = *vt[tex_vertex_indices[2]]; Point3 vt4 = *vt[tex_vertex_indices[3]];
-                    auto new_tri_1 = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
-                    auto new_tri_2 = std::make_unique<Triangle>(p1, p3, p4, normal, vt1, vt3, vt4);
-                    new_tri_1->SetMesh(mesh); new_tri_2->SetMesh(mesh);
-                    Triangle* tp1 = new_tri_1.get(); Triangle* tp2 = new_tri_2.get();
-                    f.push_back(std::move(new_tri_1)); f.push_back(std::move(new_tri_2));
-                    aabb.t.push_back(tp1); aabb.t.push_back(tp2);
-                } else {
-                    auto new_tri_1 = std::make_unique<Triangle>(p1, p2, p3, normal); auto new_tri_2 = std::make_unique<Triangle>(p1, p3, p4, normal);
-                    new_tri_1->SetMesh(mesh); new_tri_2->SetMesh(mesh);
-                    Triangle* tp1 = new_tri_1.get(); Triangle* tp2 = new_tri_2.get();
-                    f.push_back(std::move(new_tri_1)); f.push_back(std::move(new_tri_2));
-                    aabb.t.push_back(tp1); aabb.t.push_back(tp2);
-                }
-            } else {
-                Point4 p1 = *v[vertex_indices[0]]; Point4 p2 = *v[vertex_indices[1]]; Point4 p3 = *v[vertex_indices[2]];
-                Vector4 normal = *vn[nor_vertex_indices[0]];
-                if(vt.size() > 0){
-                    Point3 vt1 = *vt[tex_vertex_indices[0]]; Point3 vt2 = *vt[tex_vertex_indices[1]]; Point3 vt3 = *vt[tex_vertex_indices[2]];
-                    auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
-                    new_tri->SetMesh(mesh); aabb.t.push_back(new_tri.get()); f.push_back(std::move(new_tri));
-                } else {
-                    auto new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
-                    new_tri->SetMesh(mesh); aabb.t.push_back(new_tri.get()); f.push_back(std::move(new_tri));
-                } 
-            }
+
+  std::ifstream file(filename);
+
+  if(!file.is_open()) {
+    std::cerr << "ERROR: There was a problem opening the file " << filename << ".\n";
+    return;
+  }
+
+  std::string line;
+
+  float max_x, min_x, max_y, min_y, max_z, min_z;
+  bool first_vertice = true;
+
+  while(std::getline(file, line)){
+    if(line.empty()) continue;
+
+    if(line[0] == 'v'){
+      // --- VÉRTICE (v x y z) ---
+      if(line[1] == ' '){
+        float x, y, z;
+        fill_xyz(line, x, y, z);
+        if(first_vertice){
+          min_x = max_x = x;
+          min_y = max_y = y;
+          min_z = max_z = z;
+          first_vertice = false;
+        } else {
+          if(x < min_x) min_x = x;
+          if(x > max_x) max_x = x;
+          if(y < min_y) min_y = y;
+          if(y > max_y) max_y = y;
+          if(z < min_z) min_z = z;
+          if(z > max_z) max_z = z;
         }
+        v.push_back(std::make_unique<Point4>(x, y, z, 1));
+      } 
+      // --- NORMAL (vn x y z) ---
+      else if(line[1] == 'n'){
+        float x, y, z;
+        fill_xyz(line, x, y, z);
+        vn.push_back(std::make_unique<Vector4>(x, y, z, 0));
+      } 
+      // --- TEXTURA (vt u v) ---
+      else if(line[1] == 't'){
+        float x, y, z = 0;
+        fill_xyz(line, x, y, z);
+        vt.push_back(std::make_unique<Point3>(x, y, z));
+      }
+    } 
+    // --- FACE (f v/vt/vn ...) ---
+    else if(line[0] == 'f'){
+      int point_control = 0;
+      int vertex_control = 0;
+      int vertex_indices[4] = {0, 0, 0, -1};
+      int tex_vertex_indices[4] = {0, 0, 0, 0};
+      int nor_vertex_indices[4] = {0, 0, 0, 0};
+      
+      // Parser manual da linha da face
+      for(size_t i = 2; i < line.size(); i++){
+        if(line[i] == ' ') {
+            point_control++;
+            vertex_control = 0;
+            if(point_control > 3) break; // Proteção: ignora vértices extras em polígonos > 4 lados
+        }
+        else if(line[i] == '/') vertex_control++;
+        else if(line[i] >= 48 && line[i] <= 57){
+          int k = i;
+          std::string digit;
+          while(k < line.size() && line[k] >= 48 && line[k] <= 57){
+            digit += line[k];
+            k++;
+          }
+          int val = std::stoi(digit) - 1; // Converte para índice base 0
+          
+          if(vertex_control == 0) vertex_indices[point_control] = val;
+          else if(vertex_control == 1) tex_vertex_indices[point_control] = val;
+          else if(vertex_control == 2) nor_vertex_indices[point_control] = val;
+          i = k - 1;
+        }
+      }
+
+      // --- CHECAGEM DE SEGURANÇA (SEGFAULT FIX) ---
+      auto check_idx = [&](int idx, size_t size) -> bool {
+          if(idx < 0 || idx >= (int)size) return false;
+          return true;
+      };
+
+      // Se os vértices principais não existem, pula a face
+      if (!check_idx(vertex_indices[0], v.size()) ||
+          !check_idx(vertex_indices[1], v.size()) ||
+          !check_idx(vertex_indices[2], v.size())) continue;
+
+      // Verifica se existem normais e texturas válidas
+      bool has_normals = !vn.empty() && check_idx(nor_vertex_indices[0], vn.size());
+      
+      // Só habilita textura se ELA EXISTIR e se os índices forem válidos
+      bool has_texture = !vt.empty() && 
+                         check_idx(tex_vertex_indices[0], vt.size()) &&
+                         check_idx(tex_vertex_indices[1], vt.size()) &&
+                         check_idx(tex_vertex_indices[2], vt.size());
+
+      // Verifica se é um quadrado (Quad) e se o 4º vértice é válido
+      bool is_quad = (vertex_indices[3] != -1) && check_idx(vertex_indices[3], v.size());
+
+      // Helper para criar e adicionar triângulo
+      auto add_triangle = [&](int i0, int i1, int i2, int t0, int t1, int t2) {
+          Point4 p1 = *v[vertex_indices[i0]];
+          Point4 p2 = *v[vertex_indices[i1]];
+          Point4 p3 = *v[vertex_indices[i2]];
+          Vector4 normal = has_normals ? *vn[nor_vertex_indices[i0]] : Vector4(0, 1, 0, 0);
+
+          std::unique_ptr<Triangle> new_tri;
+
+          // Cria triângulo com textura APENAS se tudo estiver válido
+          if(has_texture && check_idx(tex_vertex_indices[t0], vt.size()) && 
+                            check_idx(tex_vertex_indices[t1], vt.size()) && 
+                            check_idx(tex_vertex_indices[t2], vt.size())) {
+              Point3 vt1 = *vt[tex_vertex_indices[t0]];
+              Point3 vt2 = *vt[tex_vertex_indices[t1]];
+              Point3 vt3 = *vt[tex_vertex_indices[t2]];
+              new_tri = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
+          } else {
+              // Senão, cria sem textura (evita o crash)
+              new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
+          }
+
+          new_tri->SetMesh(mesh);
+          Triangle* ptr = new_tri.get();
+          f.push_back(std::move(new_tri));
+          aabb.t.push_back(ptr);
+      };
+
+      // 1º Triângulo da face
+      add_triangle(0, 1, 2, 0, 1, 2);
+
+      // 2º Triângulo (se for quadrado)
+      if(is_quad){
+          add_triangle(0, 2, 3, 0, 2, 3);
+      }
     }
-    centroid.x = (max_x + min_x)/2; centroid.y = (max_y + min_y)/2; centroid.z = (max_z + min_z)/2;
-    aabb.min_x = min_x; aabb.max_x = max_x; aabb.min_y = min_y; aabb.max_y = max_y; aabb.min_z = min_z; aabb.max_z = max_z;
+  }
+
+  // Finaliza calculando o centróide e AABB
+  if (!first_vertice) {
+      centroid.x = (max_x + min_x)/2;
+      centroid.y = (max_y + min_y)/2;
+      centroid.z = (max_z + min_z)/2;
+
+      aabb.min_x = min_x; aabb.max_x = max_x;
+      aabb.min_y = min_y; aabb.max_y = max_y;
+      aabb.min_z = min_z; aabb.max_z = max_z;
+  }
 }
+
 
 float random_float2() {
   static std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
@@ -539,11 +614,11 @@ int main() {
   car1->applyTranslate(translate(Vector4(20.0f, car_half_height, 30.0f)));
 
 
-  auto car2 = createMesh("car_1.obj", "textures/car_1.png");
+  auto car2 = createMesh("fuscao.obj", "textures/gulf_blue.png");
 
   car2->applyTranslate(translate(Vector4(-car2->centroid.x, -car2->centroid.y, -car2->centroid.z)));
-  car2->applyScale(scale(Vector4(0.1f, 0.1f, 0.1f)));
-  car2->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+  car2->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
+  //car2->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
   car2->applyTranslate(translate(Vector4(30.0f, car_half_height, 30.0f)));
 
   auto car3 = createMesh("car_1.obj", "textures/car_1.png");
