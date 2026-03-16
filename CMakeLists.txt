@@ -15,6 +15,7 @@ add_compile_options(-g)
 # Listando seus arquivos de implementação conforme seu projeto
 add_executable(main
         src/main.cpp
+        src/aux_functions.cpp
         src/implementations/ListMesh.cpp
         src/implementations/Triangle.cpp
         src/implementations/Matrix4.cpp
