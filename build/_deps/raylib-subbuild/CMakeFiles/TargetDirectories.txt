@@ -1,0 +1,3 @@
+/home/luis/Programming/raycasting-cg-1/build/_deps/raylib-subbuild/CMakeFiles/raylib-populate.dir
+/home/luis/Programming/raycasting-cg-1/build/_deps/raylib-subbuild/CMakeFiles/edit_cache.dir
+/home/luis/Programming/raycasting-cg-1/build/_deps/raylib-subbuild/CMakeFiles/rebuild_cache.dir
