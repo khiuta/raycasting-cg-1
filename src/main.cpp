@@ -95,15 +95,12 @@ std::unique_ptr<ListMesh> createMesh(const std::string& objPath, const std::stri
 
 void handlePicking() {
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        // gets the mouse position
         float mouseX = GetMouseX();
         float mouseY = GetMouseY();
 
         float ndc_x, ndc_y;
-        // map the click to the window
         convertDisplayToWindow(mouseX, mouseY, ndc_x, ndc_y, xmin, xmax, ymin, ymax, nCol, nLin);
 
-        // generate a ray based on the current projection
         Vector4 ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
         ray_dir.normalize();
 
@@ -111,7 +108,6 @@ void handlePicking() {
         Object* hit_obj = nullptr;
         HitRecord rec;
 
-        // check the world to see what was clicked
         for (const auto& obj : world) {
             HitRecord temp_rec;
             if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec)) {
@@ -120,7 +116,6 @@ void handlePicking() {
             }
         }
 
-        // verify if the hit object is a mesh (mathematically defined objects still dont have transformation)
         if (hit_obj) {
             selectedObject = hit_obj;
             std::cout << "Objeto selecionado!" << std::endl;
@@ -130,268 +125,317 @@ void handlePicking() {
     }
 }
 
+// Calcula a distância focal (dWindow) com base no FOV em graus
+float calculate_dWindow_from_FOV(float fov_degrees, float wWindow) {
+    float fov_radians = fov_degrees * M_PI / 180.0f;
+    return (wWindow / 2.0f) / std::tan(fov_radians / 2.0f);
+}
+
+// Calcula o FOV em graus com base na distância focal atual (dWindow)
+float calculate_FOV_from_dWindow(float dWindow, float wWindow) {
+    float fov_radians = 2.0f * std::atan((wWindow / 2.0f) / dWindow);
+    return fov_radians * 180.0f / M_PI;
+}
+
 int main() {
   std::string obj_name = "car_1.obj";
 
   Point3 spec = Point3(0.5f, 0.5f, 0.5f);
   Point3 low_spec = Point3(0.1f, 0.1f, 0.1f);
 
-  Material lamp_color; lamp_color.color = Point3(1.0f, 0.9f, 0.5f); lamp_color.spec = spec;
-  Material post_color; post_color.color = Point3(0.2f, 0.2f, 0.2f); post_color.spec = spec;
-  Material road_cone_color; road_cone_color.color = Point3(0.8f, 0.4f, 0.1f); road_cone_color.spec = low_spec;
-  Material road_strip_color; road_strip_color.color = Point3(1.0f, 1.0f, 1.0f); road_strip_color.spec = low_spec;
+  Material lamp_color;
+  lamp_color.color = Point3(1.0f, 0.9f, 0.5f);
+  lamp_color.spec = spec;
+  Material post_color;
+  post_color.color = Point3(0.2f, 0.2f, 0.2f);
+  post_color.spec = spec;
+  Material road_cone_color;
+  road_cone_color.color = Point3(0.8f, 0.4f, 0.1f);
+  road_cone_color.spec = low_spec;
+  Material road_strip_color;
+  road_strip_color.color = Point3(1.0f, 1.0f, 1.0f);
+  road_strip_color.spec = low_spec;
 
   Light directional;
   directional.type = LightType::DIRECTIONAL;
   directional.direction = Vector4(-1.0f, -1.0f, -0.5f);
   directional.direction.normalize();
-  directional.color = Point3(0.07f, 0.07f, 0.7f); 
+  directional.color = Point3(0.07f, 0.07f, 0.7f);
 
   Light post_spot;
   post_spot.type = LightType::SPOTLIGHT;
-  post_spot.color = Point3(1.0f, 0.9f, 0.0f); 
+  post_spot.color = Point3(1.0f, 0.9f, 0.0f);
   post_spot.position = Point4(15.0f, 14.5f, 41.0f);
-  post_spot.direction = Vector4(0.0f, -1.0f, 0.0f); 
-  post_spot.cutoff = std::cos(40.0f * M_PI / 180.0f); 
+  post_spot.direction = Vector4(0.0f, -1.0f, 0.0f);
+  post_spot.cutoff = std::cos(40.0f * M_PI / 180.0f);
   post_spot.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
 
   Light post_spot2;
   post_spot2.type = LightType::SPOTLIGHT;
-  post_spot2.color = Point3(1.0f, 0.9f, 0.0f); 
+  post_spot2.color = Point3(1.0f, 0.9f, 0.0f);
   post_spot2.position = Point4(50.0f, 14.5f, 41.0f);
-  post_spot2.direction = Vector4(0.0f, -1.0f, 0.0f); 
-  post_spot2.cutoff = std::cos(40.0f * M_PI / 180.0f); 
+  post_spot2.direction = Vector4(0.0f, -1.0f, 0.0f);
+  post_spot2.cutoff = std::cos(40.0f * M_PI / 180.0f);
   post_spot2.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
 
   lights.push_back(directional);
   lights.push_back(post_spot);
   lights.push_back(post_spot2);
 
-  #pragma region world objects
-  auto car1 = createMesh("car_1.obj", "textures/car_1.png");  
+#pragma region world objects
+  auto car1 = createMesh("car_1.obj", "textures/car_1.png");
 
-  car1->applyTranslate(translate(Vector4(-car1->centroid.x, -car1->centroid.y, -car1->centroid.z)));
+  car1->applyTranslate(translate(
+      Vector4(-car1->centroid.x, -car1->centroid.y, -car1->centroid.z)));
   car1->applyScale(scale(Vector4(0.1, 0.1, 0.1)));
   Vector4 A_factors(0.5f, 0.0f, 0.0f);
   Vector4 B_factors(0.0f, 0.0f, 0.0f);
   car1->applyShear(shear(A_factors, B_factors));
-  car1->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+  car1->applyRotation(
+      rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
   float car_half_height = (car1->aabb.max_y - car1->aabb.min_y) / 2.0f;
   car1->applyTranslate(translate(Vector4(20.0f, car_half_height, 30.0f)));
 
-
   auto car2 = createMesh("fuscao.obj", "textures/gulf_blue.png");
 
-  car2->applyTranslate(translate(Vector4(-car2->centroid.x, -car2->centroid.y, -car2->centroid.z)));
+  car2->applyTranslate(translate(
+      Vector4(-car2->centroid.x, -car2->centroid.y, -car2->centroid.z)));
   car2->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
-  //car2->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
   car2->applyTranslate(translate(Vector4(30.0f, car_half_height, 30.0f)));
 
   auto car3 = createMesh("car_1.obj", "textures/car_1.png");
 
-  car3->applyTranslate(translate(Vector4(-car3->centroid.x, -car3->centroid.y, -car3->centroid.z)));
+  car3->applyTranslate(translate(
+      Vector4(-car3->centroid.x, -car3->centroid.y, -car3->centroid.z)));
   car3->applyScale(scale(Vector4(0.1f, 0.1f, 0.1f)));
-  car3->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+  car3->applyRotation(
+      rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
   car3->applyTranslate(translate(Vector4(40.0f, car_half_height, 30.0f)));
 
   auto cube = createMesh("cube.obj", "");
-  cube->applyTranslate(translate(Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
+  cube->applyTranslate(translate(
+      Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
   cube->applyScale(scale(Vector4(25.0f, 8.0f, 10.0f)));
   float half_cube_height = (cube->aabb.max_y - cube->aabb.min_y) / 2.0f;
   cube->applyTranslate(translate(Vector4(0.0f, half_cube_height, -25.0f)));
-  for(auto& face : cube->faces){ face->reflectivity = 1.0f; }
+  for (auto &face : cube->faces) {
+    face->reflectivity = 1.0f;
+  }
 
   auto shop = createMesh("loja.obj", "textures/loja.png");
-  shop->applyTranslate(translate(Vector4(-shop->centroid.x, -shop->centroid.y, -shop->centroid.z)));
+  shop->applyTranslate(translate(
+      Vector4(-shop->centroid.x, -shop->centroid.y, -shop->centroid.z)));
   shop->applyScale(scale(Vector4(6.0f, 10.0f, 5.0f)));
   shop->applyRotation(rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
   float half_shop_height = (shop->aabb.max_y - shop->aabb.min_y) / 2.0f;
   shop->applyTranslate(translate(Vector4(30.0f, half_shop_height, 5.0f)));
-  //world.push_back(std::move(shop));
-
 
   auto road = createMesh("cube.obj", "");
-  road->applyTranslate(translate(Vector4(-road->centroid.x, -road->centroid.y, -road->centroid.z)));
+  road->applyTranslate(translate(
+      Vector4(-road->centroid.x, -road->centroid.y, -road->centroid.z)));
   road->applyScale(scale(Vector4(60.0f, 0.01f, 10.0f)));
   float half_road_height = (road->aabb.max_y - road->aabb.min_y) / 2.0f;
   road->applyTranslate(translate(Vector4(30.0f, half_road_height, 50.0f)));
 
-  #pragma region vegetation
+#pragma region vegetation
 
   auto sidewalk = createMesh("floor.obj", "textures/floor_texture.png");
-  sidewalk->applyTranslate(translate(Vector4(-sidewalk->centroid.x, -sidewalk->centroid.y, -sidewalk->centroid.z)));
-  sidewalk->applyScale(scale(Vector4(1.0f, 1.0f, 1.0f))); 
-  sidewalk->applyRotation(rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
+  sidewalk->applyTranslate(translate(Vector4(
+      -sidewalk->centroid.x, -sidewalk->centroid.y, -sidewalk->centroid.z)));
+  sidewalk->applyScale(scale(Vector4(1.0f, 1.0f, 1.0f)));
+  sidewalk->applyRotation(
+      rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
 
-  float sidewalk_half_height = (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
+  float sidewalk_half_height =
+      (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
   sidewalk->applyTranslate(translate(Vector4(10.0f, -0.3f, 35.0f)));
   world.push_back(std::move(sidewalk));
 
-
   auto tree = createMesh("tree01.obj", "textures/tree01_spring.png");
-  tree->applyTranslate(translate(Vector4(-tree->centroid.x, -tree->centroid.y, -tree->centroid.z)));
-  tree->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f))); 
+  tree->applyTranslate(translate(
+      Vector4(-tree->centroid.x, -tree->centroid.y, -tree->centroid.z)));
+  tree->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
   float tree_half_height = (tree->aabb.max_y - tree->aabb.min_y) / 2.0f;
   tree->applyTranslate(translate(Vector4(10.0f, 5.0f, 40.0f)));
   world.push_back(std::move(tree));
 
   auto bush = createMesh("bush01.obj", "textures/bush1_spring.png");
-  bush->applyTranslate(translate(Vector4(-bush->centroid.x, -bush->centroid.y, -bush->centroid.z)));
-  bush->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f))); 
+  bush->applyTranslate(translate(
+      Vector4(-bush->centroid.x, -bush->centroid.y, -bush->centroid.z)));
+  bush->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
   float bush_half_height = (bush->aabb.max_y - bush->aabb.min_y) / 2.0f;
   bush->applyTranslate(translate(Vector4(48.0f, 2.0f, 40.0f)));
   world.push_back(std::move(bush));
 
   auto bush2 = createMesh("bush06.obj", "textures/bush6_spring5.png");
-  bush2->applyTranslate(translate(Vector4(-bush2->centroid.x, -bush2->centroid.y, -bush2->centroid.z)));
-  bush2->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f))); 
+  bush2->applyTranslate(translate(
+      Vector4(-bush2->centroid.x, -bush2->centroid.y, -bush2->centroid.z)));
+  bush2->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
   float bush2_half_height = (bush2->aabb.max_y - bush2->aabb.min_y) / 2.0f;
   bush2->applyTranslate(translate(Vector4(48.0f, 2.0f, 65.0f)));
   world.push_back(std::move(bush2));
 
-  #pragma region road strips
+#pragma region road strips
   auto road_strip1 = createMesh("cube.obj", "");
-  road_strip1->applyTranslate(translate(Vector4(-road_strip1->centroid.x, -road_strip1->centroid.y, -road_strip1->centroid.z)));
+  road_strip1->applyTranslate(
+      translate(Vector4(-road_strip1->centroid.x, -road_strip1->centroid.y,
+                        -road_strip1->centroid.z)));
   road_strip1->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
-  road_strip1->applyTranslate(translate(Vector4(30.0f, half_road_height + 0.01f, 50.0f)));
+  road_strip1->applyTranslate(
+      translate(Vector4(30.0f, half_road_height + 0.01f, 50.0f)));
 
-  for(auto& face : road_strip1->faces){
+  for (auto &face : road_strip1->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
-  
-  auto road_strip2 = createMesh("cube.obj", "");
-  road_strip2->applyTranslate(translate(Vector4(-road_strip2->centroid.x, -road_strip2->centroid.y, -road_strip2->centroid.z)));
-  road_strip2->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
-  road_strip2->applyTranslate(translate(Vector4(42.0f, half_road_height + 0.01f, 50.0f)));
 
-  for(auto& face : road_strip2->faces){
+  auto road_strip2 = createMesh("cube.obj", "");
+  road_strip2->applyTranslate(
+      translate(Vector4(-road_strip2->centroid.x, -road_strip2->centroid.y,
+                        -road_strip2->centroid.z)));
+  road_strip2->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
+  road_strip2->applyTranslate(
+      translate(Vector4(42.0f, half_road_height + 0.01f, 50.0f)));
+
+  for (auto &face : road_strip2->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
   auto road_strip3 = createMesh("cube.obj", "");
-  road_strip3->applyTranslate(translate(Vector4(-road_strip3->centroid.x, -road_strip3->centroid.y, -road_strip3->centroid.z)));
+  road_strip3->applyTranslate(
+      translate(Vector4(-road_strip3->centroid.x, -road_strip3->centroid.y,
+                        -road_strip3->centroid.z)));
   road_strip3->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
-  road_strip3->applyTranslate(translate(Vector4(54.0f, half_road_height + 0.01f, 50.0f)));
+  road_strip3->applyTranslate(
+      translate(Vector4(54.0f, half_road_height + 0.01f, 50.0f)));
 
-  for(auto& face : road_strip3->faces){
+  for (auto &face : road_strip3->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
   auto road_strip4 = createMesh("cube.obj", "");
-  road_strip4->applyTranslate(translate(Vector4(-road_strip4->centroid.x, -road_strip4->centroid.y, -road_strip4->centroid.z)));
+  road_strip4->applyTranslate(
+      translate(Vector4(-road_strip4->centroid.x, -road_strip4->centroid.y,
+                        -road_strip4->centroid.z)));
   road_strip4->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
-  road_strip4->applyTranslate(translate(Vector4(66.0f, half_road_height + 0.01f, 50.0f)));
+  road_strip4->applyTranslate(
+      translate(Vector4(66.0f, half_road_height + 0.01f, 50.0f)));
 
-  for(auto& face : road_strip4->faces){
+  for (auto &face : road_strip4->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
   auto road_strip5 = createMesh("cube.obj", "");
-  road_strip5->applyTranslate(translate(Vector4(-road_strip5->centroid.x, -road_strip5->centroid.y, -road_strip5->centroid.z)));
+  road_strip5->applyTranslate(
+      translate(Vector4(-road_strip5->centroid.x, -road_strip5->centroid.y,
+                        -road_strip5->centroid.z)));
   road_strip5->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
-  road_strip5->applyTranslate(translate(Vector4(18.0f, half_road_height + 0.01f, 50.0f)));
+  road_strip5->applyTranslate(
+      translate(Vector4(18.0f, half_road_height + 0.01f, 50.0f)));
 
-  for(auto& face : road_strip5->faces){
+  for (auto &face : road_strip5->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
   auto road_strip6 = createMesh("cube.obj", "");
-  road_strip6->applyTranslate(translate(Vector4(-road_strip6->centroid.x, -road_strip6->centroid.y, -road_strip6->centroid.z)));
+  road_strip6->applyTranslate(
+      translate(Vector4(-road_strip6->centroid.x, -road_strip6->centroid.y,
+                        -road_strip6->centroid.z)));
   road_strip6->applyScale(scale(Vector4(3.0f, 0.01f, 1.0f)));
-  road_strip6->applyTranslate(translate(Vector4(6.0f, half_road_height + 0.01f, 50.0f)));
+  road_strip6->applyTranslate(
+      translate(Vector4(6.0f, half_road_height + 0.01f, 50.0f)));
 
-  for(auto& face : road_strip6->faces){
+  for (auto &face : road_strip6->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
-  #pragma endregion
+#pragma endregion
 
-  auto post_base = std::make_unique<Cylinder>(Point4(15.0f, 0.0f, 35.0f), 15.0f, 1.0f, Vector4(0.0f, 1.0f, 0.0f), true, true, 
-                                              post_color.color, 
-                                              post_color.color,
-                                              post_color.spec);
-  auto post_arm = std::make_unique<Cylinder>(Point4(15.0f, 16.0f, 34.0f), 6.0f, 1.0f, Vector4(0.0f, 0.0f, 1.0f), true, true,
-                                              post_color.color,
-                                              post_color.color,
-                                              post_color.spec);
+  auto post_base = std::make_unique<Cylinder>(
+      Point4(15.0f, 0.0f, 35.0f), 15.0f, 1.0f, Vector4(0.0f, 1.0f, 0.0f), true,
+      true, post_color.color, post_color.color, post_color.spec);
+  auto post_arm = std::make_unique<Cylinder>(
+      Point4(15.0f, 16.0f, 34.0f), 6.0f, 1.0f, Vector4(0.0f, 0.0f, 1.0f), true,
+      true, post_color.color, post_color.color, post_color.spec);
   auto lamp = std::make_unique<Sphere>(Point4(15.0f, 16.0f, 41.0f), 1.0f,
-                                        lamp_color.color,
-                                        lamp_color.color,
+                                       lamp_color.color, lamp_color.color,
+                                       lamp_color.spec);
+
+  auto post_base2 = std::make_unique<Cylinder>(
+      Point4(50.0f, 0.0f, 35.0f), 15.0f, 1.0f, Vector4(0.0f, 1.0f, 0.0f), true,
+      true, post_color.color, post_color.color, post_color.spec);
+  auto post_arm2 = std::make_unique<Cylinder>(
+      Point4(50.0f, 16.0f, 35.0f), 6.0f, 1.0f, Vector4(0.0f, 0.0f, 1.0f), true,
+      true, post_color.spec, post_color.spec, post_color.spec);
+  auto lamp2 = std::make_unique<Sphere>(Point4(50.0f, 16.0f, 41.0f), 1.0f,
+                                        lamp_color.color, lamp_color.color,
                                         lamp_color.spec);
 
-  auto post_base2 = std::make_unique<Cylinder>(Point4(50.0f, 0.0f, 35.0f), 15.0f, 1.0f, Vector4(0.0f, 1.0f, 0.0f), true, true, 
-                                              post_color.color, 
-                                              post_color.color,
-                                              post_color.spec);
-  auto post_arm2 = std::make_unique<Cylinder>(Point4(50.0f, 16.0f, 35.0f), 6.0f, 1.0f, Vector4(0.0f, 0.0f, 1.0f), true, true,
-                                              post_color.spec,
-                                              post_color.spec,
-                                              post_color.spec);
-  auto lamp2 = std::make_unique<Sphere>(Point4(50.0f, 16.0f, 41.0f), 1.0f,
-                                        lamp_color.color,
-                                        lamp_color.color,
-                                        lamp_color.spec);
-  
-  #pragma region road cones
-  auto road_cone1 = std::make_unique<Cone>(Point4(30.0f, 0.0f, 40.0f), 5.0f, true, Point4(30.0f, 2.0f, 40.0f),
-                                          road_cone_color.color,
-                                          road_cone_color.color,
-                                          road_cone_color.spec);
+#pragma region road cones
+  auto road_cone1 = std::make_unique<Cone>(
+      Point4(30.0f, 0.0f, 40.0f), 5.0f, true, Point4(30.0f, 2.0f, 40.0f),
+      road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
   auto road_cone_base1 = createMesh("cube.obj", "");
-  road_cone_base1->applyTranslate(translate(Vector4(-road_cone_base1->centroid.x, -road_cone_base1->centroid.y, -road_cone_base1->centroid.z)));
+  road_cone_base1->applyTranslate(translate(
+      Vector4(-road_cone_base1->centroid.x, -road_cone_base1->centroid.y,
+              -road_cone_base1->centroid.z)));
   road_cone_base1->applyScale(scale(Vector4(1.0f, 0.02f, 1.0f)));
-  float half_base_height = (road_cone_base1->aabb.max_y - road_cone_base1->aabb.min_y) / 2.0f;
-  road_cone_base1->applyTranslate(translate(Vector4(30.0f, half_base_height, 40.0f)));
+  float half_base_height =
+      (road_cone_base1->aabb.max_y - road_cone_base1->aabb.min_y) / 2.0f;
+  road_cone_base1->applyTranslate(
+      translate(Vector4(30.0f, half_base_height, 40.0f)));
 
-  for(auto& face : road_cone_base1->faces){
+  for (auto &face : road_cone_base1->faces) {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
   }
 
-  auto road_cone2 = std::make_unique<Cone>(Point4(35.0f, 0.0f, 40.0f), 5.0f, true, Point4(35.0f, 2.0f, 40.0f),
-                                          road_cone_color.color,
-                                          road_cone_color.color,
-                                          road_cone_color.spec);
+  auto road_cone2 = std::make_unique<Cone>(
+      Point4(35.0f, 0.0f, 40.0f), 5.0f, true, Point4(35.0f, 2.0f, 40.0f),
+      road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
   auto road_cone_base2 = createMesh("cube.obj", "");
-  road_cone_base2->applyTranslate(translate(Vector4(-road_cone_base2->centroid.x, -road_cone_base2->centroid.y, -road_cone_base2->centroid.z)));
+  road_cone_base2->applyTranslate(translate(
+      Vector4(-road_cone_base2->centroid.x, -road_cone_base2->centroid.y,
+              -road_cone_base2->centroid.z)));
   road_cone_base2->applyScale(scale(Vector4(1.0f, 0.02f, 1.0f)));
-  road_cone_base2->applyTranslate(translate(Vector4(35.0f, half_base_height, 40.0f)));
+  road_cone_base2->applyTranslate(
+      translate(Vector4(35.0f, half_base_height, 40.0f)));
 
-  for(auto& face : road_cone_base2->faces){
+  for (auto &face : road_cone_base2->faces) {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
   }
 
-  auto road_cone3 = std::make_unique<Cone>(Point4(25.0f, 0.0f, 40.0f), 5.0f, true, Point4(25.0f, 2.0f, 40.0f),
-                                          road_cone_color.color,
-                                          road_cone_color.color,
-                                          road_cone_color.spec);
+  auto road_cone3 = std::make_unique<Cone>(
+      Point4(25.0f, 0.0f, 40.0f), 5.0f, true, Point4(25.0f, 2.0f, 40.0f),
+      road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
   auto road_cone_base3 = createMesh("cube.obj", "");
-  road_cone_base3->applyTranslate(translate(Vector4(-road_cone_base3->centroid.x, -road_cone_base3->centroid.y, -road_cone_base3->centroid.z)));
+  road_cone_base3->applyTranslate(translate(
+      Vector4(-road_cone_base3->centroid.x, -road_cone_base3->centroid.y,
+              -road_cone_base3->centroid.z)));
   road_cone_base3->applyScale(scale(Vector4(1.0f, 0.02f, 1.0f)));
-  road_cone_base3->applyTranslate(translate(Vector4(25.0f, half_base_height, 40.0f)));
+  road_cone_base3->applyTranslate(
+      translate(Vector4(25.0f, half_base_height, 40.0f)));
 
-  for(auto& face : road_cone_base3->faces){
+  for (auto &face : road_cone_base3->faces) {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
   }
-  #pragma endregion
-  
+#pragma endregion
+
   world.push_back(std::move(car1));
   world.push_back(std::move(car2));
   world.push_back(std::move(car3));
-  //world.push_back(std::move(shop));
   world.push_back(std::move(road));
   world.push_back(std::move(road_strip1));
   world.push_back(std::move(road_strip2));
@@ -411,37 +455,33 @@ int main() {
   world.push_back(std::move(road_cone_base1));
   world.push_back(std::move(road_cone_base2));
   world.push_back(std::move(road_cone_base3));
-  #pragma endregion
+#pragma endregion
 
-  #pragma region plains
+#pragma region plains
   Point3 specular_plains(.1, .1, .1);
   Point3 floor_col(.9, .5, 0);
-  
-
-  //world.push_back(std::make_unique<Plain>(Point4(0, 0, 0), Vector4(0, 1, 0), floor_col, floor_col, specular_plains));
 
   Point4 mirror_origin(16.0f, 0.01f, 20.1f);
   Point4 mirror_width_pt(46.0f, 0.01f, 20.1f);
-  Point4 mirror_height_pt(16.0f, 10.0f, 20.1f); 
+  Point4 mirror_height_pt(16.0f, 10.0f, 20.1f);
 
-  Point3 mirror_color(0, 0, 0); 
+  Point3 mirror_color(0, 0, 0);
   Point3 mirror_spec(1, 1, 1);
 
   auto vitrine_espelhada = std::make_unique<Rectangle>(
-      mirror_origin,
-      mirror_width_pt,
-      mirror_height_pt,
-      mirror_color, mirror_color, mirror_spec, 
-      1.0f
-  );
+      mirror_origin, mirror_width_pt, mirror_height_pt, mirror_color,
+      mirror_color, mirror_spec, 1.0f);
 
   world.push_back(std::move(vitrine_espelhada));
+#pragma endregion
 
-  #pragma endregion
+  // Calculando o dWindow e FOV iniciais
+  float fov_atual = 53.0f; // Aproximadamente o seu valor original de dWindow = 4 e wWindow = 4
+  dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
 
-  w = (lookFrom - lookAt); 
+  w = (lookFrom - lookAt);
   w.normalize();
-  u = cross(vUp, w); 
+  u = cross(vUp, w);
   u.normalize();
   v_cam = cross(w, u);
 
@@ -452,142 +492,171 @@ int main() {
   Image rayImage = GenImageColor(screenWidth, screenHeight, BLACK);
   Texture2D tex = LoadTextureFromImage(rayImage);
 
-  bool redraw = true; 
-
+  bool redraw = true;
   SetTargetFPS(60);
 
   while (!WindowShouldClose()) {
     // picking
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        float mouseX = GetMouseX();
-        float mouseY = GetMouseY();
-        float ndc_x, ndc_y;
-        
-        // map the click to window coordinates
-        convertDisplayToWindow(mouseX, mouseY, ndc_x, ndc_y, xmin, xmax, ymin, ymax, nCol, nLin);
+      float mouseX = GetMouseX();
+      float mouseY = GetMouseY();
+      float ndc_x, ndc_y;
 
-        Vector4 ray_dir;
-        if (projectionType == Projection::Perspective) {
-            ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-        } else {
-            ray_dir = -w;
+      convertDisplayToWindow(mouseX, mouseY, ndc_x, ndc_y, xmin, xmax, ymin,
+                             ymax, nCol, nLin);
+
+      Vector4 ray_dir;
+      if (projectionType == Projection::Perspective) {
+        ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
+      } else {
+        ray_dir = -w;
+      }
+      ray_dir.normalize();
+
+      float closest_t = 99999.0f;
+      HitRecord rec;
+      Object *hit_obj = nullptr;
+
+      for (const auto &obj : world) {
+        HitRecord temp_rec;
+        if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec)) {
+          closest_t = temp_rec.t;
+          hit_obj = obj.get();
         }
-        ray_dir.normalize();
+      }
 
-        float closest_t = 99999.0f;
-        HitRecord rec;
-        Object* hit_obj = nullptr;
-
-        // test intersection with world
-        for (const auto& obj : world) {
-            HitRecord temp_rec;
-            if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec)) {
-                closest_t = temp_rec.t;
-                hit_obj = obj.get();
-            }
-        }
-
-        // filter to select only meshes
-        if (hit_obj) {
-            selectedObject = hit_obj;
-        } else {
-            selectedObject = nullptr;
-        }
+      if (hit_obj) {
+        selectedObject = hit_obj;
+      } else {
+        selectedObject = nullptr;
+      }
     }
 
     // moving selected object with arrow keys
     if (selectedObject != nullptr) {
-        float step = 1.0f;
-        Vector4 moveVec(0, 0, 0, 0);
-        bool movedObject = false;
+      float step = 1.0f;
+      Vector4 moveVec(0, 0, 0, 0);
+      bool movedObject = false;
 
-        if (IsKeyDown(KEY_UP))    { moveVec.z -= step; movedObject = true; }
-        if (IsKeyDown(KEY_DOWN))  { moveVec.z += step; movedObject = true; }
-        if (IsKeyDown(KEY_LEFT))  { moveVec.x -= step; movedObject = true; }
-        if (IsKeyDown(KEY_RIGHT)) { moveVec.x += step; movedObject = true; }
+      if (IsKeyDown(KEY_UP)) { moveVec.z -= step; movedObject = true; }
+      if (IsKeyDown(KEY_DOWN)) { moveVec.z += step; movedObject = true; }
+      if (IsKeyDown(KEY_LEFT)) { moveVec.x -= step; movedObject = true; }
+      if (IsKeyDown(KEY_RIGHT)) { moveVec.x += step; movedObject = true; }
 
-        if (movedObject) {
-            // tries to convert to listmesh
-            ListMesh* mesh = dynamic_cast<ListMesh*>(selectedObject);
-            if (mesh) {
-                mesh->applyTranslate(translate(moveVec));
-                redraw = true; // forced re-rendering if the object moves
-            }
+      if (movedObject) {
+        ListMesh *mesh = dynamic_cast<ListMesh *>(selectedObject);
+        if (mesh) {
+          mesh->applyTranslate(translate(moveVec));
+          redraw = true;
         }
+      }
     }
 
     // keyboard input
-    if (IsKeyPressed(KEY_ONE))   { projectionType = Projection::Perspective; redraw = true; }
-    if (IsKeyPressed(KEY_TWO))   { projectionType = Projection::Ortographic; redraw = true; }
-    if (IsKeyPressed(KEY_THREE)) { projectionType = Projection::Oblique;     redraw = true; }
+    if (IsKeyPressed(KEY_ONE)) { projectionType = Projection::Perspective; redraw = true; }
+    if (IsKeyPressed(KEY_TWO)) { projectionType = Projection::Ortographic; redraw = true; }
+    if (IsKeyPressed(KEY_THREE)) { projectionType = Projection::Oblique; redraw = true; }
 
     if (IsKeyDown(KEY_W)) { lookFrom.z -= 1.0f; redraw = true; }
     if (IsKeyDown(KEY_S)) { lookFrom.z += 1.0f; redraw = true; }
     if (IsKeyDown(KEY_A)) { lookFrom.x -= 1.0f; redraw = true; }
     if (IsKeyDown(KEY_D)) { lookFrom.x += 1.0f; redraw = true; }
 
+    // Ajuste da distância focal (Q e E)
+    if (IsKeyDown(KEY_E)) { 
+      dWindow += 0.2f; 
+      fov_atual = calculate_FOV_from_dWindow(dWindow, wWindow);
+      redraw = true;
+    }
+    if (IsKeyDown(KEY_Q)) { 
+      dWindow -= 0.2f; 
+      if (dWindow < 0.1f) dWindow = 0.1f; 
+      fov_atual = calculate_FOV_from_dWindow(dWindow, wWindow);
+      redraw = true;
+    }
+
+    // Ajuste DIRETO do FOV em graus (Z e X)
+    if (IsKeyDown(KEY_X)) { // Zoom Out (Aumenta o ângulo de visão)
+      fov_atual += 1.0f;
+      if (fov_atual > 160.0f) fov_atual = 160.0f; // Trava para não inverter a tela
+      dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
+      redraw = true;
+    }
+    if (IsKeyDown(KEY_Z)) { // Zoom In (Diminui o ângulo de visão)
+      fov_atual -= 1.0f;
+      if (fov_atual < 10.0f) fov_atual = 10.0f; // Trava o zoom máximo
+      dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
+      redraw = true;
+    }
+
     // rendering
     if (redraw) {
-        w = (lookFrom - lookAt); w.normalize();
-        u = cross(vUp, w); u.normalize();
-        v_cam = cross(w, u);
+      w = (lookFrom - lookAt);
+      w.normalize();
+      u = cross(vUp, w);
+      u.normalize();
+      v_cam = cross(w, u);
 
-        float oblique_scale = 0.5f; 
-        float oblique_angle_rad = 0.0f;
+      float oblique_scale = 0.5f;
+      float oblique_angle_rad = 0.0f;
 
-        for (int y = 0; y < nLin; y++) {
-            for (int x = 0; x < nCol; x++) {
-                float ndc_x, ndc_y;
-                convertDisplayToWindow(x, y, ndc_x, ndc_y, xmin, xmax, ymin, ymax, nCol, nLin);
+      for (int y = 0; y < nLin; y++) {
+        for (int x = 0; x < nCol; x++) {
+          float ndc_x, ndc_y;
+          convertDisplayToWindow(x, y, ndc_x, ndc_y, xmin, xmax, ymin, ymax,
+                                 nCol, nLin);
 
-                Point4 ray_origin;
-                Vector4 ray_dir;
+          Point4 ray_origin;
+          Vector4 ray_dir;
 
-                if (projectionType == Projection::Perspective) {
-                    ray_origin = lookFrom;
-                    ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-                } else if (projectionType == Projection::Ortographic) {
-                    ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
-                    ray_dir = -w;
-                } else {
-                    ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
-                    float s_x = oblique_scale * std::cos(oblique_angle_rad);
-                    float s_y = oblique_scale * std::sin(oblique_angle_rad);
-                    ray_dir = -w + (u * s_x) + (v_cam * s_y);
-                }
-                ray_dir.normalize();
+          if (projectionType == Projection::Perspective) {
+            ray_origin = lookFrom;
+            ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
+          } else if (projectionType == Projection::Ortographic) {
+            ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
+            ray_dir = -w;
+          } else {
+            ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
+            float s_x = oblique_scale * std::cos(oblique_angle_rad);
+            float s_y = oblique_scale * std::sin(oblique_angle_rad);
+            ray_dir = -w + (u * s_x) + (v_cam * s_y);
+          }
+          ray_dir.normalize();
 
-                Point3 color = cast_ray(ray_origin, ray_dir, 2, world, lights, amb_light); 
+          Point3 color =
+              cast_ray(ray_origin, ray_dir, 2, world, lights, amb_light);
 
-                ::Color rlColor = {
-                    (unsigned char)(std::clamp(color.x, 0.0f, 1.0f) * 255),
-                    (unsigned char)(std::clamp(color.y, 0.0f, 1.0f) * 255),
-                    (unsigned char)(std::clamp(color.z, 0.0f, 1.0f) * 255),
-                    255
-                };
-                ImageDrawPixel(&rayImage, x, y, rlColor);
-            }
+          ::Color rlColor = {
+              (unsigned char)(std::clamp(color.x, 0.0f, 1.0f) * 255),
+              (unsigned char)(std::clamp(color.y, 0.0f, 1.0f) * 255),
+              (unsigned char)(std::clamp(color.z, 0.0f, 1.0f) * 255), 255};
+          ImageDrawPixel(&rayImage, x, y, rlColor);
         }
-        UpdateTexture(tex, rayImage.data);
-        redraw = false;
+      }
+      UpdateTexture(tex, rayImage.data);
+      redraw = false;
     }
 
     BeginDrawing();
-        ClearBackground(BLACK);
-        DrawTexture(tex, 0, 0, WHITE);
-        
-        // ui
-        DrawRectangle(0, nLin - 60, nCol, 60, Fade(BLACK, 0.6f));
-        if (selectedObject) {
-            DrawText("OBJETO SELECIONADO: Use as SETAS para mover", 10, nLin - 55, 20, GREEN);
-        } else {
-            DrawText("Clique em uma mesh para selecionar", 10, nLin - 55, 20, RAYWHITE);
-        }
-        DrawText("1-3: Proj | W/A/S/D: Cam", 10, nLin - 30, 20, RAYWHITE);
-        
-        DrawFPS(10, 10);
+    ClearBackground(BLACK);
+    DrawTexture(tex, 0, 0, WHITE);
+
+    // ui
+    DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
+    if (selectedObject) {
+      DrawText("OBJETO SELECIONADO: Use as SETAS para mover", 10, nLin - 80, 20, GREEN);
+    } else {
+      DrawText("Clique em uma mesh para selecionar", 10, nLin - 80, 20, RAYWHITE);
+    }
+    DrawText("1-3: Proj | W/A/S/D: Cam", 10, nLin - 55, 20, RAYWHITE);
+   
+    std::string text_focal = "Focal (Q/E): " + std::to_string(dWindow).substr(0,4) + 
+                             "  |  FOV (Z/X): " + std::to_string((int)fov_atual) + " graus";
+    DrawText(text_focal.c_str(), 10, nLin - 30, 20, YELLOW);
+
+    DrawFPS(10, 10);
     EndDrawing();
-}
+  }
 
   // cleaning
   UnloadTexture(tex);
@@ -595,34 +664,4 @@ int main() {
   CloseWindow();
 
   return 0;
-
-  // auto full_start = std::chrono::high_resolution_clock::now();
-  // int frames = 1;
-  
-  // for(int i = 0; i < frames; i++){
-  //     auto start = std::chrono::high_resolution_clock::now();
-
-  //     std::string image_name = "frames/frame_";
-  //     if(i < 10) image_name += "00";
-  //     else if(i < 100) image_name += "0";
-  //     image_name += std::to_string(i) + ".ppm";
-      
-  //     std::ofstream image(image_name);
-
-  //     if(image.is_open()) {
-  //         image << "P3\n" << nCol << " " << nLin << "\n255\n";
-  //         raycast(image, 0, 0, nCol, nLin);
-  //         image.close();
-  //     }
-
-  //     auto stop = std::chrono::high_resolution_clock::now();
-  //     std::chrono::duration<double> elapsed = stop - start;
-  //     std::cout << "Frame " << i+1 << " rendered in " << elapsed.count() << " seconds.\n";
-  // }
-
-  // auto full_stop = std::chrono::high_resolution_clock::now();
-  // std::chrono::duration<double> elapsed_total = full_stop - full_start;
-  // std::cout << "Total time: " << elapsed_total.count() << " seconds.\n";
-
-  // return 0;
 }

@@ -32,8 +32,7 @@ void Texture::loadTexture(){
   // Redimensiona o vetor
   colors.resize(h, std::vector<std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>>(w));
 
-  // Copia os dados do stb_image para a nossa estrutura
-  // O stb_image entrega um array linear, precisamos converter para matriz
+  // O stb_image entrega um array linear
   for(int i = 0; i < h; i++){
     for(int j = 0; j < w; j++){
       // O índice no array linear é: (linha * largura + coluna) * canais
@@ -44,8 +43,6 @@ void Texture::loadTexture(){
       uint8_t b = data[index + 2];
       uint8_t a = data[index + 3]; // Canal Alfa
 
-      // Nota: Algumas texturas carregam invertidas verticalmente.
-      // Se sua textura ficar de cabeça para baixo, troque 'colors[i]' por 'colors[h - 1 - i]'
       colors[i][j] = std::make_tuple(r, g, b, a);
     }
   }

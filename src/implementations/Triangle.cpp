@@ -59,7 +59,7 @@ Triangle::Triangle(const Point4 &p1, const Point4 &p2, const Point4 &p3, const V
   this->spec_color = Point3(.7, .7, .7);
 }
 
-// ... (includes e código anterior mantém igual) ...
+
 
 bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const {
   if(dot(normal, dir) >= 0) return false;
