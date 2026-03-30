@@ -17,6 +17,7 @@
 #define Material   RL_Material
 
 #include <raylib.h>
+#include <rlgl.h> // Adicionado para permitir o uso de matrizes primitivas OpenGL
 
 #undef Vector3
 #undef Vector4
@@ -65,7 +66,7 @@ Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
 Point4 lookFrom(45.0f, 15.0f, 85.0f);
-Point4 lookAt(40.f, 5.0f, 50.0f);
+Point4 lookAt(30.f, 5.0f, 50.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
 Vector4 u, v_cam, w;
 
@@ -91,38 +92,6 @@ std::unique_ptr<ListMesh> createMesh(const std::string& objPath, const std::stri
     mesh->vertices = std::move(v);
     mesh->centroid = std::move(centroid);
     return mesh;
-}
-
-void handlePicking() {
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        float mouseX = GetMouseX();
-        float mouseY = GetMouseY();
-
-        float ndc_x, ndc_y;
-        convertDisplayToWindow(mouseX, mouseY, ndc_x, ndc_y, xmin, xmax, ymin, ymax, nCol, nLin);
-
-        Vector4 ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-        ray_dir.normalize();
-
-        float closest_t = 99999.0f;
-        Object* hit_obj = nullptr;
-        HitRecord rec;
-
-        for (const auto& obj : world) {
-            HitRecord temp_rec;
-            if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec)) {
-                closest_t = temp_rec.t;
-                hit_obj = obj.get();
-            }
-        }
-
-        if (hit_obj) {
-            selectedObject = hit_obj;
-            std::cout << "Objeto selecionado!" << std::endl;
-        } else {
-            selectedObject = nullptr;
-        }
-    }
 }
 
 // Calcula a distância focal (dWindow) com base no FOV em graus
@@ -493,11 +462,22 @@ int main() {
   Texture2D tex = LoadTextureFromImage(rayImage);
 
   bool redraw = true;
+  bool useRasterization = false; // A nossa variável de Toggle!
   SetTargetFPS(60);
 
   while (!WindowShouldClose()) {
-    // picking
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+    // ----------------------------------------------------
+    // 1. INPUTS E INTERAÇÃO
+    // ----------------------------------------------------
+    
+    // Toggle para trocar entre Raycasting e OpenGL
+    if (IsKeyPressed(KEY_SPACE)) {
+        useRasterization = !useRasterization;
+        redraw = true; // Força uma atualização caso volte pro Raycasting
+    }
+
+    // picking (Mantido apenas no modo Raycasting por enquanto)
+    if (!useRasterization && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
       float mouseX = GetMouseX();
       float mouseY = GetMouseY();
       float ndc_x, ndc_y;
@@ -552,7 +532,7 @@ int main() {
       }
     }
 
-    // keyboard input
+    // Controles da Câmera (Agora afetam ambos os modos)
     if (IsKeyPressed(KEY_ONE)) { projectionType = Projection::Perspective; redraw = true; }
     if (IsKeyPressed(KEY_TWO)) { projectionType = Projection::Ortographic; redraw = true; }
     if (IsKeyPressed(KEY_THREE)) { projectionType = Projection::Oblique; redraw = true; }
@@ -589,14 +569,18 @@ int main() {
       redraw = true;
     }
 
-    // rendering
-    if (redraw) {
-      w = (lookFrom - lookAt);
-      w.normalize();
-      u = cross(vUp, w);
-      u.normalize();
-      v_cam = cross(w, u);
+    // Sincronização Matemática da Câmera
+    w = (lookFrom - lookAt);
+    w.normalize();
+    u = cross(vUp, w);
+    u.normalize();
+    v_cam = cross(w, u);
 
+    // ----------------------------------------------------
+    // 2. LÓGICA DE RENDERIZAÇÃO
+    // ----------------------------------------------------
+
+    if (!useRasterization && redraw) {
       float oblique_scale = 0.5f;
       float oblique_angle_rad = 0.0f;
 
@@ -637,18 +621,53 @@ int main() {
       redraw = false;
     }
 
+    // ----------------------------------------------------
+    // 3. DESENHO NA TELA
+    // ----------------------------------------------------
     BeginDrawing();
-    ClearBackground(BLACK);
-    DrawTexture(tex, 0, 0, WHITE);
+    
+    if (useRasterization) {
+        // MODO B: RASTERIZAÇÃO (OpenGL)
+        ClearBackground(DARKGRAY); // Fundo cinza para diferenciar do raycasting
+        
+        // Sincronizando a câmera do Raylib
+        Camera3D glCamera = { 0 };
+        glCamera.position = (RL_Vector3){ lookFrom.x, lookFrom.y, lookFrom.z };
+        glCamera.target = (RL_Vector3){ lookAt.x, lookAt.y, lookAt.z };
+        glCamera.up = (RL_Vector3){ vUp.x, vUp.y, vUp.z };
+        glCamera.fovy = fov_atual; 
+        glCamera.projection = CAMERA_PERSPECTIVE;
+
+        BeginMode3D(glCamera);
+        
+        // Desenhando o ambiente de teste em OpenGL
+        DrawGrid(100, 5.0f); // Uma grade no chão (plano XZ)
+      
+        DrawCube((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, RED);
+        DrawCubeWires((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, MAROON);
+        
+        DrawSphere((RL_Vector3){15.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
+        DrawSphere((RL_Vector3){50.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
+
+        EndMode3D();
+
+    } else {
+        // Desenha a imagem pesada calculada pela CPU
+        ClearBackground(BLACK);
+        DrawTexture(tex, 0, 0, WHITE);
+    }
 
     // ui
     DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
-    if (selectedObject) {
-      DrawText("OBJETO SELECIONADO: Use as SETAS para mover", 10, nLin - 80, 20, GREEN);
+    
+    // Mostra qual motor de renderização está ativo
+    if (useRasterization) {
+        DrawText("MOTOR: RASTERIZACAO (GPU) - Aperte ESPACO para Raycasting", 10, nLin - 80, 20, GREEN);
     } else {
-      DrawText("Clique em uma mesh para selecionar", 10, nLin - 80, 20, RAYWHITE);
+        DrawText("MOTOR: RAYCASTING (CPU) - Aperte ESPACO para OpenGL", 10, nLin - 80, 20, RED);
     }
-    DrawText("1-3: Proj | W/A/S/D: Cam", 10, nLin - 55, 20, RAYWHITE);
+
+    DrawText("1-3: Proj | W/A/S/D: Cam | Setas: Mover", 10, nLin - 55, 20, RAYWHITE);
    
     std::string text_focal = "Focal (Q/E): " + std::to_string(dWindow).substr(0,4) + 
                              "  |  FOV (Z/X): " + std::to_string((int)fov_atual) + " graus";
