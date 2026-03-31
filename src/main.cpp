@@ -66,17 +66,12 @@ Point3 amb_light(.3, .3, .3);
 Point4 observer_pos(0, 0, 0);
 
 Point4 lookFrom(45.0f, 15.0f, 85.0f);
-Point4 lookAt(30.f, 5.0f, 50.0f);
+Point4 lookAt(30.f, 5.0f, 30.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
 Vector4 u, v_cam, w;
 
 std::vector<std::unique_ptr<Object>> world;
 
-float random_float2() {
-  static std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-  static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-  return distribution(generator);
-}
 
 std::unique_ptr<ListMesh> createMesh(const std::string& objPath, const std::string& texturePath) {
     std::vector<std::unique_ptr<Point4>> v;
@@ -191,7 +186,7 @@ int main() {
     face->reflectivity = 1.0f;
   }
 
-  auto shop = createMesh("loja.obj", "textures/loja.png");
+  auto shop = createMesh("autocreto.obj", "textures/autocretotexture.png");
   shop->applyTranslate(translate(
       Vector4(-shop->centroid.x, -shop->centroid.y, -shop->centroid.z)));
   shop->applyScale(scale(Vector4(6.0f, 10.0f, 5.0f)));
@@ -405,6 +400,7 @@ int main() {
   world.push_back(std::move(car1));
   world.push_back(std::move(car2));
   world.push_back(std::move(car3));
+  world.push_back(std::move(shop));
   world.push_back(std::move(road));
   world.push_back(std::move(road_strip1));
   world.push_back(std::move(road_strip2));
@@ -430,9 +426,9 @@ int main() {
   Point3 specular_plains(.1, .1, .1);
   Point3 floor_col(.9, .5, 0);
 
-  Point4 mirror_origin(16.0f, 0.01f, 20.1f);
-  Point4 mirror_width_pt(46.0f, 0.01f, 20.1f);
-  Point4 mirror_height_pt(16.0f, 10.0f, 20.1f);
+  Point4 mirror_origin(19.0f, 0.01f, 18.1f);
+  Point4 mirror_width_pt(42.0f, 0.01f, 18.1f);
+  Point4 mirror_height_pt(19.0f, 10.0f, 18.1f);
 
   Point3 mirror_color(0, 0, 0);
   Point3 mirror_spec(1, 1, 1);

@@ -11,8 +11,18 @@ float hash(Vector4 v) {
     return std::fmod(std::sin(d) * 43758.5453f, 1.0f);
 }
 
+
+float random_float2() {
+  static std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+  return distribution(generator);
+}
+
 Vector4 reflect_ray(const Vector4& v, const Vector4& n) {
-    return v - n * 2.0f * dot(v, n);
+  Vector4 vr;
+    vr = v - n * 2.0f * dot(v, n);
+    vr.x += random_float2() / 20;
+    return vr;
 }
 
 Point3 getStarryBackground(const Vector4& dir) {
