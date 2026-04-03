@@ -5,6 +5,8 @@
 #include <fstream>
 #include <memory>
 #include <iostream>
+#include <random>
+#include <chrono>
 
 float hash(Vector4 v) {
     float d = dot(v, Vector4(12.9898, 78.233, 45.164, 9.456));
@@ -387,10 +389,16 @@ void read_obj_file(const std::string& filename,
       bool is_quad = (vertex_indices[3] != -1) && check_idx(vertex_indices[3], v.size());
 
       // Helper para criar e adicionar triângulo
+      // Helper para criar e adicionar triângulo
       auto add_triangle = [&](int i0, int i1, int i2, int t0, int t1, int t2) {
-          Point4 p1 = *v[vertex_indices[i0]];
-          Point4 p2 = *v[vertex_indices[i1]];
-          Point4 p3 = *v[vertex_indices[i2]];
+          
+          // 1. AQUI ESTÁ A MÁGICA: Usamos .get() para pegar o ponteiro cru
+          // em vez de usar '*' para copiar o Point4 inteiro.
+          Point4* p1 = v[vertex_indices[i0]].get();
+          Point4* p2 = v[vertex_indices[i1]].get();
+          Point4* p3 = v[vertex_indices[i2]].get();
+
+          // 2. Normais continuam por valor (cópia), usando o '*'
           Vector4 normal = has_normals ? *vn[nor_vertex_indices[i0]] : Vector4(0, 1, 0, 0);
 
           std::unique_ptr<Triangle> new_tri;
@@ -399,14 +407,23 @@ void read_obj_file(const std::string& filename,
           if(has_texture && check_idx(tex_vertex_indices[t0], vt.size()) && 
                             check_idx(tex_vertex_indices[t1], vt.size()) && 
                             check_idx(tex_vertex_indices[t2], vt.size())) {
+              
+              // 3. Texturas também continuam por valor (cópia)
               Point3 vt1 = *vt[tex_vertex_indices[t0]];
               Point3 vt2 = *vt[tex_vertex_indices[t1]];
               Point3 vt3 = *vt[tex_vertex_indices[t2]];
+              
+              // 4. Passamos os ponteiros de posição e os valores de normal/textura
               new_tri = std::make_unique<Triangle>(p1, p2, p3, normal, vt1, vt2, vt3);
           } else {
               // Senão, cria sem textura (evita o crash)
               new_tri = std::make_unique<Triangle>(p1, p2, p3, normal);
           }
+
+          // O resto da função continua igualzinho!
+          mesh->indices.push_back(vertex_indices[i0]);
+          mesh->indices.push_back(vertex_indices[i1]);
+          mesh->indices.push_back(vertex_indices[i2]);
 
           new_tri->SetMesh(mesh);
           Triangle* ptr = new_tri.get();

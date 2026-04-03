@@ -453,6 +453,15 @@ int main() {
   const int screenWidth = 800;
   const int screenHeight = 600;
   InitWindow(screenWidth, screenHeight, "Raycasting CG - Raylib Ativado");
+  
+  for (const auto& obj : world) {
+      // Tenta ver se o objeto é uma malha
+      ListMesh* mesh = dynamic_cast<ListMesh*>(obj.get());
+      if (mesh && mesh->indices.size()>1) {
+        mesh->InitBuffers();
+      }
+  }
+
 
   Image rayImage = GenImageColor(screenWidth, screenHeight, BLACK);
   Texture2D tex = LoadTextureFromImage(rayImage);
@@ -636,15 +645,31 @@ int main() {
 
         BeginMode3D(glCamera);
         
-        // Desenhando o ambiente de teste em OpenGL
-        DrawGrid(100, 5.0f); // Uma grade no chão (plano XZ)
+     // DrawGrid(100, 5.0f); // Uma grade no chão (plano XZ)
       
         DrawCube((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, RED);
         DrawCubeWires((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, MAROON);
         
         DrawSphere((RL_Vector3){15.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
         DrawSphere((RL_Vector3){50.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
-
+        for (const auto& obj : world) {
+        // Tenta ver se o objeto é uma malha
+        ListMesh* mesh = dynamic_cast<ListMesh*>(obj.get());
+        if (mesh) {
+            // Caso seja, chama a função de desenho que manda a GPU cuspir os triângulos!
+            // No futuro, podemos ativar shaders e texturas aqui antes do Draw()
+          
+            //rlColor3f(0.2, 0.8f, 0.8f); // Cor padrão se não tiver textura
+            mesh->Draw();
+            BoundingBox box;
+            box.min = (RL_Vector3){mesh->aabb.min_x, mesh->aabb.min_y, mesh->aabb.min_z};
+            box.max = (RL_Vector3){mesh->aabb.max_x, mesh->aabb.max_y, mesh->aabb.max_z};
+            
+            DrawBoundingBox(box, GREEN);
+           
+            
+        }
+    }
         EndMode3D();
 
     } else {

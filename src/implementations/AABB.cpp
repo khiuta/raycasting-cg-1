@@ -1,6 +1,7 @@
 #include "../../utils/AABB.hpp"
 #include "../../utils/BVH.hpp"
 #include <cmath>
+#include <algorithm> // Necessário para std::min, std::max e std::swap
 
 bool AABB::IntersectRayAABB(const Point4& origin, const Vector4& dir, float& t_hit) const {
     // Começa com intervalo infinito
@@ -9,15 +10,14 @@ bool AABB::IntersectRayAABB(const Point4& origin, const Vector4& dir, float& t_h
     
     // --- EIXO X ---
     if (std::abs(dir.x) < 1e-9f) { 
-        // Raio paralelo ao eixo X. Se a origem estiver fora da caixa, nunca acerta.
         if (origin.x < min_x || origin.x > max_x) return false;
     } else {
         float invD = 1.0f / dir.x;
         float t0 = (min_x - origin.x) * invD;
         float t1 = (max_x - origin.x) * invD;
         if (invD < 0.0f) std::swap(t0, t1);
-        t_min = t0 > t_min ? t0 : t_min; // std::max
-        t_max = t1 < t_max ? t1 : t_max; // std::min
+        t_min = t0 > t_min ? t0 : t_min; 
+        t_max = t1 < t_max ? t1 : t_max; 
         if (t_max <= t_min) return false;
     }
 
@@ -47,10 +47,8 @@ bool AABB::IntersectRayAABB(const Point4& origin, const Vector4& dir, float& t_h
         if (t_max <= t_min) return false;
     }
 
-    // Se a caixa está atrás da câmera (t_max < 0), é um erro
     if (t_max < 0) return false;
 
-    // Se t_min for negativo (câmera dentro da caixa), o hit é instantâneo (0)
     t_hit = (t_min < 0.0f) ? 0.0f : t_min;
 
     return true;
@@ -66,39 +64,39 @@ int point_inside_aabb(Point4 &p, AABB& aabb){
 }
 
 bool triangle_inside_aabb(Triangle &tri, AABB& aabb){
-  Point4 centroid = (tri.p1 + tri.p2 + tri.p3) / 3.0f;
+  
+  Point4 centroid = (*tri.p1 + *tri.p2 + *tri.p3) / 3.0f;
   if(point_inside_aabb(centroid, aabb)) return true;
   return false;
 }
 
 void AABB::refit() {
-    // Começa "avesso" para poder crescer
     min_x = 1e30f; max_x = -1e30f;
     min_y = 1e30f; max_y = -1e30f;
     min_z = 1e30f; max_z = -1e30f;
 
     for (const auto& tri : t) {
+        // CORREÇÃO 2: Acessando atributos x,y,z com a setinha '->'
+        
         // Expande para incluir p1
-        min_x = std::min(min_x, tri->p1.x); max_x = std::max(max_x, tri->p1.x);
-        min_y = std::min(min_y, tri->p1.y); max_y = std::max(max_y, tri->p1.y);
-        min_z = std::min(min_z, tri->p1.z); max_z = std::max(max_z, tri->p1.z);
+        min_x = std::min(min_x, tri->p1->x); max_x = std::max(max_x, tri->p1->x);
+        min_y = std::min(min_y, tri->p1->y); max_y = std::max(max_y, tri->p1->y);
+        min_z = std::min(min_z, tri->p1->z); max_z = std::max(max_z, tri->p1->z);
 
         // Expande para incluir p2
-        min_x = std::min(min_x, tri->p2.x); max_x = std::max(max_x, tri->p2.x);
-        min_y = std::min(min_y, tri->p2.y); max_y = std::max(max_y, tri->p2.y);
-        min_z = std::min(min_z, tri->p2.z); max_z = std::max(max_z, tri->p2.z);
+        min_x = std::min(min_x, tri->p2->x); max_x = std::max(max_x, tri->p2->x);
+        min_y = std::min(min_y, tri->p2->y); max_y = std::max(max_y, tri->p2->y);
+        min_z = std::min(min_z, tri->p2->z); max_z = std::max(max_z, tri->p2->z);
 
         // Expande para incluir p3
-        min_x = std::min(min_x, tri->p3.x); max_x = std::max(max_x, tri->p3.x);
-        min_y = std::min(min_y, tri->p3.y); max_y = std::max(max_y, tri->p3.y);
-        min_z = std::min(min_z, tri->p3.z); max_z = std::max(max_z, tri->p3.z);
+        min_x = std::min(min_x, tri->p3->x); max_x = std::max(max_x, tri->p3->x);
+        min_y = std::min(min_y, tri->p3->y); max_y = std::max(max_y, tri->p3->y);
+        min_z = std::min(min_z, tri->p3->z); max_z = std::max(max_z, tri->p3->z);
     }
 }
 
 void AABB::buildBVH(int depth) {
-  float h = this->height();
-  float w = this->width();
-  float d = this->depth();
+
 
   if(depth <= 0) {
     left = nullptr;
@@ -108,56 +106,50 @@ void AABB::buildBVH(int depth) {
   }
 
   float mid_x = (min_x + max_x) / 2.0f;
-    float mid_y = (min_y + max_y) / 2.0f;
-    float mid_z = (min_z + max_z) / 2.0f;
+  float mid_y = (min_y + max_y) / 2.0f;
+  float mid_z = (min_z + max_z) / 2.0f;
 
-    float dx = max_x - min_x;
-    float dy = max_y - min_y;
-    float dz = max_z - min_z;
+  float dx = max_x - min_x;
+  float dy = max_y - min_y;
+  float dz = max_z - min_z;
 
-    int axis = 0; // 0=X, 1=Y, 2=Z
-    if (dy > dx && dy > dz) axis = 1;
-    else if (dz > dx && dz > dy) axis = 2;
+  int axis = 0; // 0=X, 1=Y, 2=Z
+  if (dy > dx && dy > dz) axis = 1;
+  else if (dz > dx && dz > dy) axis = 2;
 
-    // 2. Cria os filhos VAZIOS (sem coordenadas fixas ainda!)
-    auto left_node = std::make_unique<AABB>();
-    auto right_node = std::make_unique<AABB>();
+  auto left_node = std::make_unique<AABB>();
+  auto right_node = std::make_unique<AABB>();
 
-    // 3. Distribui os triângulos baseado no Centróide
-    for (auto* tri : t) {
-        Point4 c = (tri->p1 + tri->p2 + tri->p3) / 3.0f;
-        bool goes_left = false;
-        
-        if (axis == 0) goes_left = (c.x < mid_x);
-        else if (axis == 1) goes_left = (c.y < mid_y);
-        else goes_left = (c.z < mid_z);
+  for (auto* tri : t) {
+      // CORREÇÃO 3: Desreferenciando para calcular centróide no BVH
+      Point4 c = (*tri->p1 + *tri->p2 + *tri->p3) / 3.0f;
+      bool goes_left = false;
+      
+      if (axis == 0) goes_left = (c.x < mid_x);
+      else if (axis == 1) goes_left = (c.y < mid_y);
+      else goes_left = (c.z < mid_z);
 
-        if (goes_left) left_node->t.push_back(tri);
-        else right_node->t.push_back(tri);
-    }
+      if (goes_left) left_node->t.push_back(tri);
+      else right_node->t.push_back(tri);
+  }
     
-    // CUIDADO: Se um lado ficou vazio, não divida! Senão entra em loop infinito.
-    if (left_node->t.empty() || right_node->t.empty()) {
-        left = nullptr; right = nullptr;
-        refit();
-        return;
-    }
+  if (left_node->t.empty() || right_node->t.empty()) {
+      left = nullptr; right = nullptr;
+      refit();
+      return;
+  }
 
-    // 4. REFIT: A mágica acontece aqui. 
-    // As caixas agora se ajustam ao tamanho real dos triângulos dentro delas.
-    left_node->refit();
-    right_node->refit();
+  left_node->refit();
+  right_node->refit();
 
-    // 5. Conecta e Recursa
-    left = std::move(left_node);
-    right = std::move(right_node);
-    
-    // Limpa os triângulos deste nó (eles desceram para os filhos)
-    this->t.clear(); 
-    this->t.shrink_to_fit();
+  left = std::move(left_node);
+  right = std::move(right_node);
+  
+  this->t.clear(); 
+  this->t.shrink_to_fit();
 
-    left->buildBVH(depth - 1);
-    right->buildBVH(depth - 1);
+  left->buildBVH(depth - 1);
+  right->buildBVH(depth - 1);
 }
 
 bool AABB::is_leaf() const{
@@ -166,45 +158,37 @@ bool AABB::is_leaf() const{
 }
 
 bool AABB::Hit(const Point4& origin, const Vector4& dir, float t_min, float t_max, HitRecord& rec) const {
-    // 1. Se o raio não toca nesta caixa, nem perde tempo com o que tem dentro.
     float t_box;
     if (!IntersectRayAABB(origin, dir, t_box)) return false; 
 
-    // 2. SE FOR FOLHA: Testa os triângulos (Força bruta local)
     if (is_leaf()) {
         bool hit_anything = false;
         float closest_so_far = t_max;
 
         for (const auto& tri : t) {
             HitRecord temp_rec;
-            // Se bater no triângulo E for mais perto que o anterior...
             if (tri->Intersect(origin, dir, t_min, closest_so_far, temp_rec)) {
                 hit_anything = true;
-                closest_so_far = temp_rec.t; // Atualiza o limite para o próximo
-                rec = temp_rec;              // Salva o registro
+                closest_so_far = temp_rec.t; 
+                rec = temp_rec;              
             }
         }
         return hit_anything;
     }
 
-    // 3. SE FOR NÓ INTERNO: Testa os filhos
     bool hit_left = false;
     bool hit_right = false;
 
-    // Tenta a esquerda
     if (left) {
         hit_left = left->Hit(origin, dir, t_min, t_max, rec);
     }
 
-    // Tenta a direita
     if (right) {
-        // OTIMIZAÇÃO: Se bateu na esquerda em t=5, só precisamos testar a direita
-        // se ela estiver mais perto que 5.
         float t_limit = hit_left ? rec.t : t_max;
         
         HitRecord rec_right;
         if (right->Hit(origin, dir, t_min, t_limit, rec_right)) {
-            rec = rec_right; // Direita ganhou (era mais próxima)
+            rec = rec_right; 
             hit_right = true;
         }
     }
