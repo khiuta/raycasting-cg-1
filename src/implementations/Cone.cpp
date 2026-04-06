@@ -20,13 +20,13 @@ bool Cone::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, floa
 
     float dot_dir_dc = dot(dir, dc);
     Vector4 dir_proj = dir - dc * dot_dir_dc;
-    float a = dot_dir_dc * dot_dir_dc - m * dot(dir_proj, dir_proj);
+    float a = dot(dir_proj, dir_proj) - m * (dot_dir_dc * dot_dir_dc);
 
     float dot_w_dc = dot(w, dc);
     Vector4 w_proj = w - dc * dot_w_dc;
-    float b = 2.0f * (dot_dir_dc * dot_w_dc - m * dot(dir_proj, w_proj));
+    float b = 2.0f * (dot(dir_proj, w_proj) - m * (dot_dir_dc * dot_w_dc));
 
-    float c = dot_w_dc * dot_w_dc - m * dot(w_proj, w_proj);
+    float c = dot(w_proj, w_proj) - m * (dot_w_dc * dot_w_dc);
 
     float disc = b * b - 4.0f * a * c;
     if (disc < 0) return false;

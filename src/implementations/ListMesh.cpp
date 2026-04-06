@@ -51,16 +51,12 @@ void ListMesh::rebuildStructures() {
     this->aabb.min_y = minY; this->aabb.max_y = maxY;
     this->aabb.min_z = minZ; this->aabb.max_z = maxZ;
 
-    // 3. ATUALIZAÇÃO DO CENTRÓIDE
+    
     this->centroid = Point4((minX + maxX) / 2.0f, (minY + maxY) / 2.0f, (minZ + maxZ) / 2.0f, 1.0f);
 
     // 4. RECONSTRUÇÃO DA HIERARQUIA (BVH)
     this->aabb.buildBVH(10); 
 }
-
-// =======================================================================
-// NOVAS FUNÇÕES DE TRANSFORMAÇÃO: Atuam nos vértices originais!
-// =======================================================================
 
 void ListMesh::applyTranslate(const Matrix4 &m) {
     // 1. Aplica a matriz em todos os vértices base (Point4)
