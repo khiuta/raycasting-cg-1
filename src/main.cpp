@@ -48,6 +48,12 @@ float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
+// auxiliary vector for real time edge detection mode
+Point3 init(0.0f, 0.0f, 0.0f);
+std::vector<Point3> pixels((size_t)(nCol*nLin), init);
+
+bool edge_detection = true;
+
 float xmin = -2.0f, xmax = 2.0f;
 float ymin = -1.5f, ymax = 1.5f;
 
@@ -440,6 +446,8 @@ int main() {
   world.push_back(std::move(vitrine_espelhada));
 #pragma endregion
 
+#pragma endregion
+  
   // Calculando o dWindow e FOV iniciais
   float fov_atual = 53.0f; // Aproximadamente o seu valor original de dWindow = 4 e wWindow = 4
   dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
@@ -584,7 +592,6 @@ int main() {
     // ----------------------------------------------------
     // 2. LÓGICA DE RENDERIZAÇÃO
     // ----------------------------------------------------
-
     if (!useRasterization && redraw) {
       float oblique_scale = 0.5f;
       float oblique_angle_rad = 0.0f;
@@ -615,11 +622,47 @@ int main() {
           Point3 color =
               cast_ray(ray_origin, ray_dir, 2, world, lights, amb_light);
 
-          ::Color rlColor = {
+          if(edge_detection){
+            // nCol -> image width
+            pixels[y*nCol+x] = color;
+          } else {
+            ::Color rlColor = {
               (unsigned char)(std::clamp(color.x, 0.0f, 1.0f) * 255),
               (unsigned char)(std::clamp(color.y, 0.0f, 1.0f) * 255),
               (unsigned char)(std::clamp(color.z, 0.0f, 1.0f) * 255), 255};
-          ImageDrawPixel(&rayImage, x, y, rlColor);
+          
+            ImageDrawPixel(&rayImage, x, y, rlColor);
+          }
+        }
+      }
+      if(edge_detection){
+        for(int y = 0; y < nLin; y++){
+          for(int x = 0; x < nCol; x++){
+            Point3 right_point = x + 1 < nCol ? pixels[y*nCol+(x+1)] : Point3(0.0f, 0.0f, 0.0f);
+            float right_px = x + 1 < nCol ? right_point.x * 0.299f + right_point.y * 0.587f + right_point.z * 0.114f : 0.0f;
+
+            Point3 left_point = x - 1 >= 0 ? pixels[y*nCol+(x-1)] : Point3(0.0f, 0.0f, 0.0f);
+            float left_px = x - 1 >= 0 ? left_point.x * 0.299f + left_point.y * 0.587f + left_point.z * 0.114f : 0.0f;
+
+            float gradient_x = (right_px - left_px) / 2.0f;
+
+            Point3 down_point = y + 1 < nLin ? pixels[(y+1)*nCol+x] : Point3(0.0f, 0.0f, 0.0f);
+            float down_px = y + 1 < nLin ? down_point.x * 0.299f + down_point.y * 0.587f + down_point.z * 0.114f : 0.0f;
+
+            Point3 up_point = y - 1 >= 0 ? pixels[(y-1)*nCol+x] : Point3(0.0f, 0.0f, 0.0f);
+            float up_px = y - 1 >= 0 ? up_point.x * 0.299f + up_point.y * 0.587f + up_point.z * 0.114f : 0.0f;
+
+            float gradient_y = (down_px - up_px) / 2.0f;
+
+            int grayscale = (int)(255.0f * sqrt(gradient_x*gradient_x + gradient_y*gradient_y));
+
+            ::Color rlColor = {
+                    (unsigned char)grayscale,
+                    (unsigned char)grayscale,
+                    (unsigned char)grayscale, 255};
+
+            ImageDrawPixel(&rayImage, x, y, rlColor);
+          }
         }
       }
       UpdateTexture(tex, rayImage.data);

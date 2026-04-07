@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/luis/Programming/raycasting-cg-1
+CMAKE_SOURCE_DIR = /home/poguel/Documents/ufc/cg/raycasting-cg-1
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/luis/Programming/raycasting-cg-1/build
+CMAKE_BINARY_DIR = /home/poguel/Documents/ufc/cg/raycasting-cg-1/build
 
 #=============================================================================
 # Targets provided globally by CMake.

@@ -33,11 +33,15 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
 
 Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights, Point3 amb_light, std::vector<std::unique_ptr<Object>> &world);
 
-Point3 cast_ray(const Point4& ray_origin, const Vector4& ray_dir, int depth, std::vector<std::unique_ptr<Object>> &world, std::vector<Light> lights, Point3 amb_light);
+Point3 cast_ray(const Point4& ray_origin, const Vector4& ray_dir, int depth, 
+                std::vector<std::unique_ptr<Object>> &world, 
+                std::vector<Light> &lights,
+                Point3& amb_light);
 
 void raycast(std::ofstream &image, int lin_start, int col_start, int width, int height, float xmin, float xmax, float ymin, float ymax, int nCol, int nLin, 
               Projection projectionType, Point4 lookFrom, Vector4 u, Vector4 v_cam, Vector4 w, float dWindow, std::vector<std::unique_ptr<Object>> &world, 
-              std::vector<Light> lights, Point3 amb_light);
+              std::vector<Light> lights, std::vector<float> pixels, Point3 amb_light, const Vector4& ray_dir_up, const Vector4& ray_dir_down,
+              const Vector4& ray_dir_right, const Vector4& ray_dir_left, bool border_detection, int x, int y);
 
 void fill_xyz(std::string line, float &x, float &y, float &z);
 void read_obj_file(const std::string& filename,
