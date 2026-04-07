@@ -1,3 +1,6 @@
 build/frames/
 build/CMakeFiles/
 build/CMakeCache.txt
+build/Makefile
+.vscode
+build/*.cmake

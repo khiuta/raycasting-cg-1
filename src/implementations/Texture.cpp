@@ -2,7 +2,7 @@
 #include <iostream>
 
 // Definição necessária para a biblioteca funcionar (apenas neste .cpp)
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #include "../../utils/stb_image.h" // Certifique-se que o caminho está correto
 
 Texture::Texture(const std::string &filename) {

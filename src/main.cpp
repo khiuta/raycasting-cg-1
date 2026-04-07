@@ -52,7 +52,7 @@ float dWindow = 4.0f;
 Point3 init(0.0f, 0.0f, 0.0f);
 std::vector<Point3> pixels((size_t)(nCol*nLin), init);
 
-bool edge_detection = true;
+bool edge_detection = false;
 
 float xmin = -2.0f, xmax = 2.0f;
 float ymin = -1.5f, ymax = 1.5f;
@@ -347,7 +347,7 @@ int main() {
 
 #pragma region road cones
   auto road_cone1 = std::make_unique<Cone>(
-      Point4(30.0f, 0.0f, 40.0f), 5.0f, true, Point4(30.0f, 2.0f, 40.0f),
+      Point4(30.0f, 0.0f, 40.0f), .8f, true, Point4(30.0f, 2.0f, 40.0f),
       road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
   auto road_cone_base1 = createMesh("cube.obj", "");
@@ -367,7 +367,7 @@ int main() {
   }
 
   auto road_cone2 = std::make_unique<Cone>(
-      Point4(35.0f, 0.0f, 40.0f), 5.0f, true, Point4(35.0f, 2.0f, 40.0f),
+      Point4(35.0f, 0.0f, 40.0f), .8f, true, Point4(35.0f, 2.0f, 40.0f),
       road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
   auto road_cone_base2 = createMesh("cube.obj", "");
@@ -385,7 +385,7 @@ int main() {
   }
 
   auto road_cone3 = std::make_unique<Cone>(
-      Point4(25.0f, 0.0f, 40.0f), 5.0f, true, Point4(25.0f, 2.0f, 40.0f),
+      Point4(25.0f, 0.0f, 40.0f), .8f, true, Point4(25.0f, 2.0f, 40.0f),
       road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
   auto road_cone_base3 = createMesh("cube.obj", "");
