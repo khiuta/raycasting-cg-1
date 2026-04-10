@@ -8,13 +8,16 @@
 #include <sstream>
 #include <numbers>
 #include <chrono>
-
-#define Vector3    RL_Vector3
-#define Vector4    RL_Vector4
-#define Matrix     RL_Matrix
-#define Texture    RL_Texture
-#define Rectangle  RL_Rectangle
-#define Material   RL_Material
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+// #include "../utils/glad.h"
+#define Vector3 RL_Vector3
+#define Vector4 RL_Vector4
+#define Matrix RL_Matrix
+#define Texture RL_Texture
+#define Rectangle RL_Rectangle
+#define Material RL_Material
 
 #include <raylib.h>
 #include <rlgl.h> // Adicionado para permitir o uso de matrizes primitivas OpenGL
@@ -43,14 +46,14 @@
 #include "./aux_functions.hpp"
 
 const float wWindow = 4.f, hWindow = 3.f;
-const int nCol = wWindow*200, nLin = hWindow*200;
+const int nCol = wWindow * 200, nLin = hWindow * 200;
 float dx = wWindow / nCol;
 float dy = hWindow / nLin;
 float dWindow = 4.0f;
 
 // auxiliary vector for real time edge detection mode
 Point3 init(0.0f, 0.0f, 0.0f);
-std::vector<Point3> pixels((size_t)(nCol*nLin), init);
+std::vector<Point3> pixels((size_t)(nCol * nLin), init);
 
 bool edge_detection = false;
 
@@ -59,12 +62,13 @@ float ymin = -1.5f, ymax = 1.5f;
 
 Projection projectionType = Projection::Perspective;
 
-struct Material {
+struct Material
+{
   Point3 color;
   Point3 spec;
 };
 
-Object* selectedObject = nullptr;
+Object *selectedObject = nullptr;
 
 std::vector<Light> lights;
 
@@ -78,36 +82,39 @@ Vector4 u, v_cam, w;
 
 std::vector<std::unique_ptr<Object>> world;
 
-
-std::unique_ptr<ListMesh> createMesh(const std::string& objPath, const std::string& texturePath) {
-    std::vector<std::unique_ptr<Point4>> v;
-    std::vector<std::unique_ptr<Vector4>> vn;
-    std::vector<std::unique_ptr<Point3>> vt;
-    std::vector<std::unique_ptr<Triangle>> f;
-    Point4 centroid;
-    AABB aabb;
-    auto mesh = std::make_unique<ListMesh>(texturePath);
-    read_obj_file(objPath, v, vn, vt, f, centroid, aabb, mesh.get());
-    mesh->aabb = std::move(aabb);
-    mesh->faces = std::move(f);
-    mesh->vertices = std::move(v);
-    mesh->centroid = std::move(centroid);
-    return mesh;
+std::unique_ptr<ListMesh> createMesh(const std::string &objPath, const std::string &texturePath)
+{
+  std::vector<std::unique_ptr<Point4>> v;
+  std::vector<std::unique_ptr<Vector4>> vn;
+  std::vector<std::unique_ptr<Point3>> vt;
+  std::vector<std::unique_ptr<Triangle>> f;
+  Point4 centroid;
+  AABB aabb;
+  auto mesh = std::make_unique<ListMesh>(texturePath);
+  read_obj_file(objPath, v, vn, vt, f, centroid, aabb, mesh.get());
+  mesh->aabb = std::move(aabb);
+  mesh->faces = std::move(f);
+  mesh->vertices = std::move(v);
+  mesh->centroid = std::move(centroid);
+  return mesh;
 }
 
 // Calcula a distância focal (dWindow) com base no FOV em graus
-float calculate_dWindow_from_FOV(float fov_degrees, float wWindow) {
-    float fov_radians = fov_degrees * M_PI / 180.0f;
-    return (wWindow / 2.0f) / std::tan(fov_radians / 2.0f);
+float calculate_dWindow_from_FOV(float fov_degrees, float wWindow)
+{
+  float fov_radians = fov_degrees * M_PI / 180.0f;
+  return (wWindow / 2.0f) / std::tan(fov_radians / 2.0f);
 }
 
 // Calcula o FOV em graus com base na distância focal atual (dWindow)
-float calculate_FOV_from_dWindow(float dWindow, float wWindow) {
-    float fov_radians = 2.0f * std::atan((wWindow / 2.0f) / dWindow);
-    return fov_radians * 180.0f / M_PI;
+float calculate_FOV_from_dWindow(float dWindow, float wWindow)
+{
+  float fov_radians = 2.0f * std::atan((wWindow / 2.0f) / dWindow);
+  return fov_radians * 180.0f / M_PI;
 }
 
-int main() {
+int main()
+{
   std::string obj_name = "car_1.obj";
 
   Point3 spec = Point3(0.5f, 0.5f, 0.5f);
@@ -188,7 +195,8 @@ int main() {
   cube->applyScale(scale(Vector4(25.0f, 8.0f, 10.0f)));
   float half_cube_height = (cube->aabb.max_y - cube->aabb.min_y) / 2.0f;
   cube->applyTranslate(translate(Vector4(0.0f, half_cube_height, -25.0f)));
-  for (auto &face : cube->faces) {
+  for (auto &face : cube->faces)
+  {
     face->reflectivity = 1.0f;
   }
 
@@ -254,7 +262,8 @@ int main() {
   road_strip1->applyTranslate(
       translate(Vector4(30.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip1->faces) {
+  for (auto &face : road_strip1->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -267,7 +276,8 @@ int main() {
   road_strip2->applyTranslate(
       translate(Vector4(42.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip2->faces) {
+  for (auto &face : road_strip2->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -280,7 +290,8 @@ int main() {
   road_strip3->applyTranslate(
       translate(Vector4(54.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip3->faces) {
+  for (auto &face : road_strip3->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -293,7 +304,8 @@ int main() {
   road_strip4->applyTranslate(
       translate(Vector4(66.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip4->faces) {
+  for (auto &face : road_strip4->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -306,7 +318,8 @@ int main() {
   road_strip5->applyTranslate(
       translate(Vector4(18.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip5->faces) {
+  for (auto &face : road_strip5->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -319,7 +332,8 @@ int main() {
   road_strip6->applyTranslate(
       translate(Vector4(6.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip6->faces) {
+  for (auto &face : road_strip6->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -360,7 +374,8 @@ int main() {
   road_cone_base1->applyTranslate(
       translate(Vector4(30.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base1->faces) {
+  for (auto &face : road_cone_base1->faces)
+  {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -378,7 +393,8 @@ int main() {
   road_cone_base2->applyTranslate(
       translate(Vector4(35.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base2->faces) {
+  for (auto &face : road_cone_base2->faces)
+  {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -396,7 +412,8 @@ int main() {
   road_cone_base3->applyTranslate(
       translate(Vector4(25.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base3->faces) {
+  for (auto &face : road_cone_base3->faces)
+  {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -447,7 +464,7 @@ int main() {
 #pragma endregion
 
 #pragma endregion
-  
+
   // Calculando o dWindow e FOV iniciais
   float fov_atual = 53.0f; // Aproximadamente o seu valor original de dWindow = 4 e wWindow = 4
   dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
@@ -461,15 +478,17 @@ int main() {
   const int screenWidth = 800;
   const int screenHeight = 600;
   InitWindow(screenWidth, screenHeight, "Raycasting CG - Raylib Ativado");
-  
-  for (const auto& obj : world) {
-      // Tenta ver se o objeto é uma malha
-      ListMesh* mesh = dynamic_cast<ListMesh*>(obj.get());
-      if (mesh && mesh->indices.size()>1) {
-        mesh->InitBuffers();
-      }
+  // gladLoadGL();
+  // glViewport(0,0,screenWidth,screenHeight);
+  for (const auto &obj : world)
+  {
+    // Tenta ver se o objeto é uma malha
+    ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
+    if (mesh && mesh->indices.size() > 1)
+    {
+      mesh->InitBuffers();
+    }
   }
-
 
   Image rayImage = GenImageColor(screenWidth, screenHeight, BLACK);
   Texture2D tex = LoadTextureFromImage(rayImage);
@@ -478,19 +497,22 @@ int main() {
   bool useRasterization = false; // A nossa variável de Toggle!
   SetTargetFPS(60);
 
-  while (!WindowShouldClose()) {
+  while (!WindowShouldClose())
+  {
     // ----------------------------------------------------
     // 1. INPUTS E INTERAÇÃO
     // ----------------------------------------------------
-    
+
     // Toggle para trocar entre Raycasting e OpenGL
-    if (IsKeyPressed(KEY_SPACE)) {
-        useRasterization = !useRasterization;
-        redraw = true; // Força uma atualização caso volte pro Raycasting
+    if (IsKeyPressed(KEY_SPACE))
+    {
+      useRasterization = !useRasterization;
+      redraw = true; // Força uma atualização caso volte pro Raycasting
     }
 
     // picking (Mantido apenas no modo Raycasting por enquanto)
-    if (!useRasterization && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+    if (!useRasterization && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
       float mouseX = GetMouseX();
       float mouseY = GetMouseY();
       float ndc_x, ndc_y;
@@ -499,9 +521,12 @@ int main() {
                              ymax, nCol, nLin);
 
       Vector4 ray_dir;
-      if (projectionType == Projection::Perspective) {
+      if (projectionType == Projection::Perspective)
+      {
         ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-      } else {
+      }
+      else
+      {
         ray_dir = -w;
       }
       ray_dir.normalize();
@@ -510,35 +535,59 @@ int main() {
       HitRecord rec;
       Object *hit_obj = nullptr;
 
-      for (const auto &obj : world) {
+      for (const auto &obj : world)
+      {
         HitRecord temp_rec;
-        if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec)) {
+        if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec))
+        {
           closest_t = temp_rec.t;
           hit_obj = obj.get();
         }
       }
 
-      if (hit_obj) {
+      if (hit_obj)
+      {
         selectedObject = hit_obj;
-      } else {
+      }
+      else
+      {
         selectedObject = nullptr;
       }
     }
 
     // moving selected object with arrow keys
-    if (selectedObject != nullptr) {
+    if (selectedObject != nullptr)
+    {
       float step = 1.0f;
       Vector4 moveVec(0, 0, 0, 0);
       bool movedObject = false;
 
-      if (IsKeyDown(KEY_UP)) { moveVec.z -= step; movedObject = true; }
-      if (IsKeyDown(KEY_DOWN)) { moveVec.z += step; movedObject = true; }
-      if (IsKeyDown(KEY_LEFT)) { moveVec.x -= step; movedObject = true; }
-      if (IsKeyDown(KEY_RIGHT)) { moveVec.x += step; movedObject = true; }
+      if (IsKeyDown(KEY_UP))
+      {
+        moveVec.z -= step;
+        movedObject = true;
+      }
+      if (IsKeyDown(KEY_DOWN))
+      {
+        moveVec.z += step;
+        movedObject = true;
+      }
+      if (IsKeyDown(KEY_LEFT))
+      {
+        moveVec.x -= step;
+        movedObject = true;
+      }
+      if (IsKeyDown(KEY_RIGHT))
+      {
+        moveVec.x += step;
+        movedObject = true;
+      }
 
-      if (movedObject) {
+      if (movedObject)
+      {
         ListMesh *mesh = dynamic_cast<ListMesh *>(selectedObject);
-        if (mesh) {
+        if (mesh)
+        {
           mesh->applyTranslate(translate(moveVec));
           redraw = true;
         }
@@ -546,38 +595,73 @@ int main() {
     }
 
     // Controles da Câmera (Agora afetam ambos os modos)
-    if (IsKeyPressed(KEY_ONE)) { projectionType = Projection::Perspective; redraw = true; }
-    if (IsKeyPressed(KEY_TWO)) { projectionType = Projection::Ortographic; redraw = true; }
-    if (IsKeyPressed(KEY_THREE)) { projectionType = Projection::Oblique; redraw = true; }
+    if (IsKeyPressed(KEY_ONE))
+    {
+      projectionType = Projection::Perspective;
+      redraw = true;
+    }
+    if (IsKeyPressed(KEY_TWO))
+    {
+      projectionType = Projection::Ortographic;
+      redraw = true;
+    }
+    if (IsKeyPressed(KEY_THREE))
+    {
+      projectionType = Projection::Oblique;
+      redraw = true;
+    }
 
-    if (IsKeyDown(KEY_W)) { lookFrom.z -= 1.0f; redraw = true; }
-    if (IsKeyDown(KEY_S)) { lookFrom.z += 1.0f; redraw = true; }
-    if (IsKeyDown(KEY_A)) { lookFrom.x -= 1.0f; redraw = true; }
-    if (IsKeyDown(KEY_D)) { lookFrom.x += 1.0f; redraw = true; }
+    if (IsKeyDown(KEY_W))
+    {
+      lookFrom.z -= 1.0f;
+      redraw = true;
+    }
+    if (IsKeyDown(KEY_S))
+    {
+      lookFrom.z += 1.0f;
+      redraw = true;
+    }
+    if (IsKeyDown(KEY_A))
+    {
+      lookFrom.x -= 1.0f;
+      redraw = true;
+    }
+    if (IsKeyDown(KEY_D))
+    {
+      lookFrom.x += 1.0f;
+      redraw = true;
+    }
 
     // Ajuste da distância focal (Q e E)
-    if (IsKeyDown(KEY_E)) { 
-      dWindow += 0.2f; 
+    if (IsKeyDown(KEY_E))
+    {
+      dWindow += 0.2f;
       fov_atual = calculate_FOV_from_dWindow(dWindow, wWindow);
       redraw = true;
     }
-    if (IsKeyDown(KEY_Q)) { 
-      dWindow -= 0.2f; 
-      if (dWindow < 0.1f) dWindow = 0.1f; 
+    if (IsKeyDown(KEY_Q))
+    {
+      dWindow -= 0.2f;
+      if (dWindow < 0.1f)
+        dWindow = 0.1f;
       fov_atual = calculate_FOV_from_dWindow(dWindow, wWindow);
       redraw = true;
     }
 
     // Ajuste DIRETO do FOV em graus (Z e X)
-    if (IsKeyDown(KEY_X)) { // Zoom Out (Aumenta o ângulo de visão)
+    if (IsKeyDown(KEY_X))
+    { // Zoom Out (Aumenta o ângulo de visão)
       fov_atual += 1.0f;
-      if (fov_atual > 160.0f) fov_atual = 160.0f; // Trava para não inverter a tela
+      if (fov_atual > 160.0f)
+        fov_atual = 160.0f; // Trava para não inverter a tela
       dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
       redraw = true;
     }
-    if (IsKeyDown(KEY_Z)) { // Zoom In (Diminui o ângulo de visão)
+    if (IsKeyDown(KEY_Z))
+    { // Zoom In (Diminui o ângulo de visão)
       fov_atual -= 1.0f;
-      if (fov_atual < 10.0f) fov_atual = 10.0f; // Trava o zoom máximo
+      if (fov_atual < 10.0f)
+        fov_atual = 10.0f; // Trava o zoom máximo
       dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
       redraw = true;
     }
@@ -592,12 +676,15 @@ int main() {
     // ----------------------------------------------------
     // 2. LÓGICA DE RENDERIZAÇÃO
     // ----------------------------------------------------
-    if (!useRasterization && redraw) {
+    if (!useRasterization && redraw)
+    {
       float oblique_scale = 0.5f;
       float oblique_angle_rad = 0.0f;
 
-      for (int y = 0; y < nLin; y++) {
-        for (int x = 0; x < nCol; x++) {
+      for (int y = 0; y < nLin; y++)
+      {
+        for (int x = 0; x < nCol; x++)
+        {
           float ndc_x, ndc_y;
           convertDisplayToWindow(x, y, ndc_x, ndc_y, xmin, xmax, ymin, ymax,
                                  nCol, nLin);
@@ -605,13 +692,18 @@ int main() {
           Point4 ray_origin;
           Vector4 ray_dir;
 
-          if (projectionType == Projection::Perspective) {
+          if (projectionType == Projection::Perspective)
+          {
             ray_origin = lookFrom;
             ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-          } else if (projectionType == Projection::Ortographic) {
+          }
+          else if (projectionType == Projection::Ortographic)
+          {
             ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
             ray_dir = -w;
-          } else {
+          }
+          else
+          {
             ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
             float s_x = oblique_scale * std::cos(oblique_angle_rad);
             float s_y = oblique_scale * std::sin(oblique_angle_rad);
@@ -622,44 +714,50 @@ int main() {
           Point3 color =
               cast_ray(ray_origin, ray_dir, 2, world, lights, amb_light);
 
-          if(edge_detection){
+          if (edge_detection)
+          {
             // nCol -> image width
-            pixels[y*nCol+x] = color;
-          } else {
+            pixels[y * nCol + x] = color;
+          }
+          else
+          {
             ::Color rlColor = {
-              (unsigned char)(std::clamp(color.x, 0.0f, 1.0f) * 255),
-              (unsigned char)(std::clamp(color.y, 0.0f, 1.0f) * 255),
-              (unsigned char)(std::clamp(color.z, 0.0f, 1.0f) * 255), 255};
-          
+                (unsigned char)(std::clamp(color.x, 0.0f, 1.0f) * 255),
+                (unsigned char)(std::clamp(color.y, 0.0f, 1.0f) * 255),
+                (unsigned char)(std::clamp(color.z, 0.0f, 1.0f) * 255), 255};
+
             ImageDrawPixel(&rayImage, x, y, rlColor);
           }
         }
       }
-      if(edge_detection){
-        for(int y = 0; y < nLin; y++){
-          for(int x = 0; x < nCol; x++){
-            Point3 right_point = x + 1 < nCol ? pixels[y*nCol+(x+1)] : Point3(0.0f, 0.0f, 0.0f);
+      if (edge_detection)
+      {
+        for (int y = 0; y < nLin; y++)
+        {
+          for (int x = 0; x < nCol; x++)
+          {
+            Point3 right_point = x + 1 < nCol ? pixels[y * nCol + (x + 1)] : Point3(0.0f, 0.0f, 0.0f);
             float right_px = x + 1 < nCol ? right_point.x * 0.299f + right_point.y * 0.587f + right_point.z * 0.114f : 0.0f;
 
-            Point3 left_point = x - 1 >= 0 ? pixels[y*nCol+(x-1)] : Point3(0.0f, 0.0f, 0.0f);
+            Point3 left_point = x - 1 >= 0 ? pixels[y * nCol + (x - 1)] : Point3(0.0f, 0.0f, 0.0f);
             float left_px = x - 1 >= 0 ? left_point.x * 0.299f + left_point.y * 0.587f + left_point.z * 0.114f : 0.0f;
 
             float gradient_x = (right_px - left_px) / 2.0f;
 
-            Point3 down_point = y + 1 < nLin ? pixels[(y+1)*nCol+x] : Point3(0.0f, 0.0f, 0.0f);
+            Point3 down_point = y + 1 < nLin ? pixels[(y + 1) * nCol + x] : Point3(0.0f, 0.0f, 0.0f);
             float down_px = y + 1 < nLin ? down_point.x * 0.299f + down_point.y * 0.587f + down_point.z * 0.114f : 0.0f;
 
-            Point3 up_point = y - 1 >= 0 ? pixels[(y-1)*nCol+x] : Point3(0.0f, 0.0f, 0.0f);
+            Point3 up_point = y - 1 >= 0 ? pixels[(y - 1) * nCol + x] : Point3(0.0f, 0.0f, 0.0f);
             float up_px = y - 1 >= 0 ? up_point.x * 0.299f + up_point.y * 0.587f + up_point.z * 0.114f : 0.0f;
 
             float gradient_y = (down_px - up_px) / 2.0f;
 
-            int grayscale = (int)(255.0f * sqrt(gradient_x*gradient_x + gradient_y*gradient_y));
+            int grayscale = (int)(255.0f * sqrt(gradient_x * gradient_x + gradient_y * gradient_y));
 
             ::Color rlColor = {
-                    (unsigned char)grayscale,
-                    (unsigned char)grayscale,
-                    (unsigned char)grayscale, 255};
+                (unsigned char)grayscale,
+                (unsigned char)grayscale,
+                (unsigned char)grayscale, 255};
 
             ImageDrawPixel(&rayImage, x, y, rlColor);
           }
@@ -672,68 +770,81 @@ int main() {
     // ----------------------------------------------------
     // 3. DESENHO NA TELA
     // ----------------------------------------------------
-    BeginDrawing();
-    
-    if (useRasterization) {
-        // MODO B: RASTERIZAÇÃO (OpenGL)
-        ClearBackground(DARKGRAY); // Fundo cinza para diferenciar do raycasting
-        
-        // Sincronizando a câmera do Raylib
-        Camera3D glCamera = { 0 };
-        glCamera.position = (RL_Vector3){ lookFrom.x, lookFrom.y, lookFrom.z };
-        glCamera.target = (RL_Vector3){ lookAt.x, lookAt.y, lookAt.z };
-        glCamera.up = (RL_Vector3){ vUp.x, vUp.y, vUp.z };
-        glCamera.fovy = fov_atual; 
-        glCamera.projection = CAMERA_PERSPECTIVE;
+    // BeginDrawing();
 
-        BeginMode3D(glCamera);
-        
-     // DrawGrid(100, 5.0f); // Uma grade no chão (plano XZ)
-      
-        DrawCube((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, RED);
-        DrawCubeWires((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, MAROON);
-        
-        DrawSphere((RL_Vector3){15.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
-        DrawSphere((RL_Vector3){50.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
-        for (const auto& obj : world) {
+    if (useRasterization)
+    {
+      // MODO B: RASTERIZAÇÃO (OpenGL)
+      ClearBackground(DARKGRAY); // Fundo cinza para diferenciar do raycasting
+
+      // Sincronizando a câmera do Raylib
+      Camera3D glCamera = {0};
+      glCamera.position = (RL_Vector3){lookFrom.x, lookFrom.y, lookFrom.z};
+      glCamera.target = (RL_Vector3){lookAt.x, lookAt.y, lookAt.z};
+      glCamera.up = (RL_Vector3){vUp.x, vUp.y, vUp.z};
+      glCamera.fovy = fov_atual;
+      glCamera.projection = CAMERA_PERSPECTIVE;
+
+      //  BeginMode3D(glCamera);
+
+      // DrawGrid(100, 5.0f); // Uma grade no chão (plano XZ)
+
+      //  DrawCube((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, RED);
+      //  DrawCubeWires((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, MAROON);
+
+      //   DrawSphere((RL_Vector3){15.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
+      //   DrawSphere((RL_Vector3){50.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
+      for (const auto &obj : world)
+      {
         // Tenta ver se o objeto é uma malha
-        ListMesh* mesh = dynamic_cast<ListMesh*>(obj.get());
-        if (mesh) {
-            // Caso seja, chama a função de desenho que manda a GPU cuspir os triângulos!
-            // No futuro, podemos ativar shaders e texturas aqui antes do Draw()
-          
-            //rlColor3f(0.2, 0.8f, 0.8f); // Cor padrão se não tiver textura
-            mesh->Draw();
-            BoundingBox box;
-            box.min = (RL_Vector3){mesh->aabb.min_x, mesh->aabb.min_y, mesh->aabb.min_z};
-            box.max = (RL_Vector3){mesh->aabb.max_x, mesh->aabb.max_y, mesh->aabb.max_z};
-            
-            DrawBoundingBox(box, GREEN);
-           
-            
-        }
-    }
-        EndMode3D();
+        ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
+        if (mesh)
+        {
 
-    } else {
-        // Desenha a imagem pesada calculada pela CPU
-        ClearBackground(BLACK);
-        DrawTexture(tex, 0, 0, WHITE);
+          glm::vec3 glmPos = glm::vec3(lookFrom.x, lookFrom.y, lookFrom.z);
+
+       
+          glm::vec3 glmTarget = glm::vec3(lookAt.x, lookAt.y, lookAt.z);
+
+          glm::vec3 glmUp = glm::vec3(vUp.x, vUp.y, vUp.z);
+
+          glm::mat4 view = glm::lookAt(glmPos, glmTarget, glmUp);
+
+          // Envia para o shader/mesh
+          mesh->UpdateBuffers();
+          mesh->Draw(view);
+          BoundingBox box;
+          box.min = (RL_Vector3){mesh->aabb.min_x, mesh->aabb.min_y, mesh->aabb.min_z};
+          box.max = (RL_Vector3){mesh->aabb.max_x, mesh->aabb.max_y, mesh->aabb.max_z};
+
+           DrawBoundingBox(box, GREEN);
+        }
+      }
+      // EndMode3D();
+    }
+    else
+    {
+      // Desenha a imagem pesada calculada pela CPU
+      ClearBackground(BLACK);
+      DrawTexture(tex, 0, 0, WHITE);
     }
 
     // ui
     DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
-    
+
     // Mostra qual motor de renderização está ativo
-    if (useRasterization) {
-        DrawText("MOTOR: RASTERIZACAO (GPU) - Aperte ESPACO para Raycasting", 10, nLin - 80, 20, GREEN);
-    } else {
-        DrawText("MOTOR: RAYCASTING (CPU) - Aperte ESPACO para OpenGL", 10, nLin - 80, 20, RED);
+    if (useRasterization)
+    {
+      DrawText("MOTOR: RASTERIZACAO (GPU) - Aperte ESPACO para Raycasting", 10, nLin - 80, 20, GREEN);
+    }
+    else
+    {
+      DrawText("MOTOR: RAYCASTING (CPU) - Aperte ESPACO para OpenGL", 10, nLin - 80, 20, RED);
     }
 
     DrawText("1-3: Proj | W/A/S/D: Cam | Setas: Mover", 10, nLin - 55, 20, RAYWHITE);
-   
-    std::string text_focal = "Focal (Q/E): " + std::to_string(dWindow).substr(0,4) + 
+
+    std::string text_focal = "Focal (Q/E): " + std::to_string(dWindow).substr(0, 4) +
                              "  |  FOV (Z/X): " + std::to_string((int)fov_atual) + " graus";
     DrawText(text_focal.c_str(), 10, nLin - 30, 20, YELLOW);
 

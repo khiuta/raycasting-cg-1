@@ -6,7 +6,7 @@ project(main)
 # --- 1. ENCONTRAR A RAYLIB ---
 # Isso procura os arquivos da raylib instalados no seu EndeavourOS
 find_package(raylib REQUIRED)
-
+find_package(glm REQUIRED)
 # Opções de otimização (mantendo as suas)
 add_compile_options(-Ofast)
 add_compile_options(-g)

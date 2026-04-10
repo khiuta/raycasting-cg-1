@@ -1,7 +1,10 @@
 #include "../../utils/ListMesh.hpp"
 #include "../../utils/BVH.hpp"
 #include <iostream>
-
+#include "../../utils/glad.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 ListMesh::ListMesh() {};
 
 ListMesh::ListMesh(const std::string &filename) {
@@ -116,74 +119,151 @@ std::vector<float> ListMesh::FlattenVertices() {
     return flatData;
 }
 
+static unsigned int compileShader(unsigned int type,
+                                  const std::string &source) {
+  // Lembra que para criar um buffer primeiro criamos um variável
+  // para depois passá-la dentro da função glGenBuffers.
+  // Mas para criar um shader, a função glCreateShader já
+  // retorna o id do shader.
+  // Pois é, fugiu um pouco do padrão que aprendemos. né?
+  // Bem vindo ao OpenGL! <3
+  unsigned int id = glCreateShader(type);
+
+  const char *src =
+      source.c_str(); // Vamos pegar nossa string c++ e transformar
+                      // em um array de chars, típico do c.
+  // Criamos o id do shader e agora vamos passar o código para ele
+  glShaderSource(id, 1, &src, nullptr);
+  glCompileShader(id);
+
+  int result;
+  // Essa função retorna um parâmetro do shader
+  //  GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH,
+  //  GL_SHADER_SOURCE_LENGTH.
+  glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+  // Result será 0 caso ocorra um erro e 1 caso não ocorra
+
+  // Como o valor ou é 0 ou 1, podemos tratá-los como booleanos nesse if
+  if (!result) {
+    int lenght;
+    glGetShaderiv(id, GL_INFO_LOG_LENGTH, &lenght);
+    char *message = (char *)alloca(lenght * sizeof(char));
+    glGetShaderInfoLog(id, lenght, &lenght, message);
+    std::cout << "FAILED TO COMPILE SHADER"
+              << (type == GL_VERTEX_SHADER ? "Vertex Shader"
+                                           : "Fragment Shader")
+              << "\n";
+    std::cout << message << "\n";
+    glDeleteShader(id);
+    return 0;
+  }
+  return id; // retorna o id  do shader
+}
+static unsigned int CreateShader(const std::string &vertexShader,
+                                 const std::string &fragmentShader) {
+  unsigned int program =
+      glCreateProgram(); // Criar um shader program e retorna um id
+  unsigned int vs = compileShader(GL_VERTEX_SHADER, vertexShader);
+  unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader);
+
+  // Vamos colocar nossos dois shaders no shader program
+  glAttachShader(program, vs);
+  glAttachShader(program, fs);
+  // Vamos agora fazer o link do shader program
+  glLinkProgram(program);
+  glValidateProgram(program);
+
+  // Agora que já fizemos o link do programa, os shaders estão dentro dele e
+  // já não precisamos mais deles
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+
+  return program;
+}
 void ListMesh::InitBuffers() {
-    auto flatData = FlattenVertices(); 
+    // PROTEÇÃO: Garante que temos vértices e índices
+    if (vertices.empty() || indices.empty()) return;
 
-    // PROTEÇÃO: Vamos garantir que os índices vieram do OBJ!
-    if(flatData.empty() || this->indices.empty()) {
-        std::cout << "ERRO: Tentou iniciar buffers com malha vazia ou sem indices!" << std::endl;
-        return;
-    }
+    // 1. Pega os vértices únicos (Apenas Posições x, y, z)
+    auto flatData = FlattenVertices();
 
-    // Criação das Cores: Vamos criar um array do mesmo tamanho dos vértices
-    // e forçar todo mundo a ser Vermelho (R=255, G=0, B=0, A=255)
-    std::vector<unsigned char> colors;
-    colors.reserve(vertices.size() * 4);
-    for(size_t i = 0; i < vertices.size(); i++) {
-        colors.push_back(255); // Red
-        colors.push_back(0);   // Green
-        colors.push_back(0);   // Blue
-        colors.push_back(255); // Alpha
-    }
+    // 2. Garante compatibilidade de tipo de dado para o EBO!
+    // Se o seu mesh->indices for std::vector<int>, nós criamos um buffer unsigned int
+    // Isso evita o bug da "teia de aranha" na leitura de bits do OpenGL.
+    std::vector<unsigned int> glIndices(indices.begin(), indices.end());
 
-    this->VAO = rlLoadVertexArray();
-    rlEnableVertexArray(VAO);
-    
-    // 1. VBO de Posições (Location 0)
-    this->VBO = rlLoadVertexBuffer(flatData.data(), flatData.size() * sizeof(float), true);
-    rlSetVertexAttribute(0, 3, RL_FLOAT, 0, 0, 0); 
-    rlEnableVertexAttribute(0);
+    // 3. Cria e vincula o VAO (Ele vai "gravar" as configurações do VBO e EBO)
+    glGenVertexArrays(1, &this->VAO);
+    glBindVertexArray(this->VAO);
 
-    // 2. VBO de Cores (Location 3) - ISSO VAI EVITAR A CAMUFLAGEM
-    unsigned int colorVBO = rlLoadVertexBuffer(colors.data(), colors.size() * sizeof(unsigned char), false);
-    // Note o '1' no 4º parametro: Ele normaliza a cor de 0-255 para 0.0-1.0 no shader!
-    rlSetVertexAttribute(3, 4, RL_UNSIGNED_BYTE, 1, 0, 0); 
-    rlEnableVertexAttribute(3);
-    
-    // 3. EBO de Índices
-    this->EBO = rlLoadVertexBufferElement(this->indices.data(), this->indices.size() * sizeof(unsigned short), true);
-    
-    rlDisableVertexArray();
-    
-    
-    std::cout << "Buffers do OpenGL criados com sucesso! Vertices: " << vertices.size() << " | Indices: " << indices.size() << std::endl;
+    // 4. VBO (Vertex Buffer Object) - Envia os vértices flatData
+    glGenBuffers(1, &this->VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+    glBufferData(GL_ARRAY_BUFFER, flatData.size() * sizeof(float), flatData.data(), GL_STATIC_DRAW);
+
+    // 5. EBO (Element Buffer Object) - Envia a ordem de ligação (índices)
+    glGenBuffers(1, &this->EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO); // IMPORTANTE: Deve ser feito com o VAO ativo!
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, glIndices.size() * sizeof(unsigned int), glIndices.data(), GL_STATIC_DRAW);
+
+    // 6. Avisa o shader onde está a Posição (Location = 0)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    // ==========================================
+    // SHADERS
+    // ==========================================
+    std::string vertexShader =
+        "#version 330 core\n"
+        "layout(location=0) in vec3 position;\n"
+        "out vec3 aColor;\n"
+        "uniform mat4 u_MVP;\n"
+        "void main()\n"
+        "{\n"
+        "  gl_Position = u_MVP * vec4(position, 1.0);\n"
+        "  aColor = vec3(0.5, 0.7, 0.9);\n" // Cor padrão para enxergar a malha
+        "}\n";
+
+    std::string fragmentShader = 
+        "#version 330 core\n"
+        "in vec3 aColor;\n"
+        "out vec4 color;\n"
+        "void main()\n"
+        "{\n"
+        "  color = vec4(aColor, 1.0);\n"
+        "}\n";
+
+    this->shader = CreateShader(vertexShader, fragmentShader);
+
+    // Desvincula o VAO para não sujar o estado acidentalmente depois
+    glBindVertexArray(0); 
+
+    std::cout << "EBO Iniciado! Vértices: " << vertices.size() << " | Índices: " << indices.size() << std::endl;
 }
 void ListMesh::UpdateBuffers() {
     if(this->VBO == 0) return; // Evita atualizar buffer que não existe
     auto flatData = FlattenVertices();
     
-    // Envia os novos dados para o VBO existente na GPU
-    rlUpdateVertexBuffer(this->VBO, flatData.data(), flatData.size() * sizeof(float), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+    glBufferData(GL_ARRAY_BUFFER, flatData.size() * sizeof(float), flatData.data(), GL_STATIC_DRAW);
 }
-
-void ListMesh::Draw() {
+void ListMesh::Draw(glm::mat4 view) {
     if (this->VAO == 0 || this->indices.empty()) return;
 
-    rlDrawRenderBatchActive();
+    glUseProgram(this->shader);
+    int mvpLoc = glGetUniformLocation(shader, "u_MVP");
+    
+    glm::mat4 model = glm::mat4(1.0f);
+    
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 1000.0f);
+    glm::mat4 mvp = projection * view * model;
 
-    rlPushMatrix();
-
-        rlDisableBackfaceCulling();
-
-     
-        rlEnableVertexArray(this->VAO);
-       
-        rlDrawVertexArrayElements(0, this->indices.size(), 0);
-        
-        rlDisableVertexArray();
-
-       
-        rlEnableBackfaceCulling();
-
-    rlPopMatrix();
+    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+   
+    glBindVertexArray(this->VAO);
+    
+    
+    glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, (void*)0);
+    
+    glBindVertexArray(0);
 }
