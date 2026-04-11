@@ -8,5 +8,5 @@ uniform mat4 u_MVP;
 void main()
 {
     gl_Position = u_MVP * vec4(position, 1.0);
-    aColor = vec3(0.5, 0.7, 0.9);
+    aColor = vec3(sin(position.x/10), cos(position.y/1), sin(position.z));
 }
