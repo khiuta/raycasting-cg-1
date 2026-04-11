@@ -76,5 +76,11 @@
   "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Cone.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Cone.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Cone.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Cone.cpp.o"
+},
+{
+  "directory": "/home/luis/Programming/raycasting-cg-1/build",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Shader.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Shader.cpp",
+  "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Shader.cpp",
+  "output": "CMakeFiles/main.dir/src/implementations/Shader.cpp.o"
 }
 ]

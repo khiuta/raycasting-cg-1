@@ -26,7 +26,9 @@ add_executable(main
         src/implementations/Texture.cpp
         src/implementations/Cylinder.cpp
         src/implementations/Rectangle.cpp
-        src/implementations/Cone.cpp)
+        src/implementations/Cone.cpp
+        src/implementations/Shader.cpp
+        )
 
 # --- 3. DIRETÓRIOS DE INCLUDE ---
 # Adiciona sua pasta utils e os cabeçalhos da raylib

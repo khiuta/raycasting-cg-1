@@ -775,8 +775,8 @@ int main()
     if (useRasterization)
     {
       // MODO B: RASTERIZAÇÃO (OpenGL)
-      ClearBackground(DARKGRAY); // Fundo cinza para diferenciar do raycasting
-
+      ClearBackground(BLUE); // Fundo cinza para diferenciar do raycasting
+      
       // Sincronizando a câmera do Raylib
       Camera3D glCamera = {0};
       glCamera.position = (RL_Vector3){lookFrom.x, lookFrom.y, lookFrom.z};

@@ -213,29 +213,9 @@ void ListMesh::InitBuffers() {
     // ==========================================
     // SHADERS
     // ==========================================
-    std::string vertexShader =
-        "#version 330 core\n"
-        "layout(location=0) in vec3 position;\n"
-        "out vec3 aColor;\n"
-        "uniform mat4 u_MVP;\n"
-        "void main()\n"
-        "{\n"
-        "  gl_Position = u_MVP * vec4(position, 1.0);\n"
-        "  aColor = vec3(0.5, 0.7, 0.9);\n" // Cor padrão para enxergar a malha
-        "}\n";
-
-    std::string fragmentShader = 
-        "#version 330 core\n"
-        "in vec3 aColor;\n"
-        "out vec4 color;\n"
-        "void main()\n"
-        "{\n"
-        "  color = vec4(aColor, 1.0);\n"
-        "}\n";
-
-    this->shader = CreateShader(vertexShader, fragmentShader);
-
-    // Desvincula o VAO para não sujar o estado acidentalmente depois
+    this->shader = std::make_unique<ShaderRC>("../shaders/default.vs", "../shaders/default.fs");
+    
+    //unbind VAO
     glBindVertexArray(0); 
 
     std::cout << "EBO Iniciado! Vértices: " << vertices.size() << " | Índices: " << indices.size() << std::endl;
@@ -249,16 +229,18 @@ void ListMesh::UpdateBuffers() {
 }
 void ListMesh::Draw(glm::mat4 view) {
     if (this->VAO == 0 || this->indices.empty()) return;
-
-    glUseProgram(this->shader);
-    int mvpLoc = glGetUniformLocation(shader, "u_MVP");
+    glEnable(GL_DEPTH_TEST);
+    
+    this->shader->use();
+   
     
     glm::mat4 model = glm::mat4(1.0f);
     
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 1000.0f);
     glm::mat4 mvp = projection * view * model;
 
-    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+    this->shader->setMat4("u_MVP",mvp);
+
    
     glBindVertexArray(this->VAO);
     

@@ -5,6 +5,7 @@
 #include "Object.hpp"
 #include "Matrix4.hpp"
 #include "AABB.hpp"
+#include "ShaderRC.hpp"
 #include "Texture.hpp"
 #include <rlgl.h>
 #include <glm/glm.hpp>
@@ -17,7 +18,8 @@ class ListMesh : public Object {
     std::vector<std::unique_ptr<Triangle>> faces;
     std::vector<unsigned short> indices;
     std::vector<std::unique_ptr<Point4>> vertices;
-    unsigned int VAO,VBO,EBO,shader;
+    unsigned int VAO,VBO,EBO;
+    std::unique_ptr<ShaderRC> shader;
     Point4 centroid;
     AABB aabb;
     Texture *texture = new Texture();
