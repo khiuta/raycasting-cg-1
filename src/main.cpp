@@ -189,6 +189,15 @@ int main()
    //   rotate(Vector4(0.0f, 1.0f, 0.0f), -00.0f * M_PI / 180.0f));
   car3->applyTranslate(translate(Vector4(37.0f, car_half_height, 30.0f)));
 
+   auto car4 = createMesh("Bus.obj", "textures/Bus.png");
+
+  car4->applyTranslate(translate(
+      Vector4(-car4->centroid.x, -car4->centroid.y, -car4->centroid.z)));
+  car4->applyScale(scale(Vector4(3.f, 3.f, 3.f)));
+  car4->applyRotation(
+     rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+  car4->applyTranslate(translate(Vector4(60.0f,4.f, 45.0f)));
+
   auto cube = createMesh("cube.obj", "");
   cube->applyTranslate(translate(
       Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
@@ -432,6 +441,7 @@ int main()
   world.push_back(std::move(car1));
   world.push_back(std::move(car2));
   world.push_back(std::move(car3));
+  world.push_back(std::move(car4));
   world.push_back(std::move(shop));
   world.push_back(std::move(road));
   world.push_back(std::move(road_strip1));
