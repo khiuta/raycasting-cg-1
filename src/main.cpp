@@ -77,6 +77,7 @@ Point4 observer_pos(0, 0, 0);
 
 Point4 lookFrom(45.0f, 15.0f, 85.0f);
 Point4 lookAt(30.f, 5.0f, 30.0f);
+// Point4 lookAt(0.f, 5.0f, 70.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
 Vector4 u, v_cam, w;
 
@@ -155,9 +156,28 @@ int main()
   post_spot2.cutoff = std::cos(40.0f * M_PI / 180.0f);
   post_spot2.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
 
+  Light farol1_carro2;
+  farol1_carro2.type = LightType::SPOTLIGHT;
+  farol1_carro2.color = Point3(1.0f, .7f, 0.0f);
+  farol1_carro2.position = Point4(28.5f, 1.5f, 34.5f);
+  farol1_carro2.direction = Vector4(0.0f, -0.7f, 1.0f);
+  farol1_carro2.cutoff = std::cos(8.f* M_PI / 180.0f);
+  farol1_carro2.outer_cutoff = std::cos(20.f* M_PI / 180.0f);
+
+   Light farol2_carro2;
+  farol2_carro2.type = LightType::SPOTLIGHT;
+  farol2_carro2.color = Point3(1.0f, 0.7f, 0.0f);
+  farol2_carro2.position = Point4(30.9f, 1.5f, 34.5f);
+  farol2_carro2.direction = Vector4(0.0f, -0.7f, 1.0f);
+  farol2_carro2.cutoff = std::cos(8.f* M_PI / 180.0f);
+  farol2_carro2.outer_cutoff = std::cos(20.f* M_PI / 180.0f);
+
   lights.push_back(directional);
   lights.push_back(post_spot);
   lights.push_back(post_spot2);
+  lights.push_back(farol1_carro2);
+  lights.push_back(farol2_carro2);
+
 
 #pragma region world objects
   auto car1 = createMesh("car_1.obj", "textures/car_1.png");
@@ -185,18 +205,18 @@ int main()
   car3->applyTranslate(translate(
       Vector4(-car3->centroid.x, -car3->centroid.y, -car3->centroid.z)));
   car3->applyScale(scale(Vector4(2.f, 2.f, 2.f)));
- // car3->applyRotation(
-   //   rotate(Vector4(0.0f, 1.0f, 0.0f), -00.0f * M_PI / 180.0f));
+  // car3->applyRotation(
+  //   rotate(Vector4(0.0f, 1.0f, 0.0f), -00.0f * M_PI / 180.0f));
   car3->applyTranslate(translate(Vector4(37.0f, car_half_height, 30.0f)));
 
-   auto car4 = createMesh("Bus.obj", "textures/Bus.png");
+  auto car4 = createMesh("Bus.obj", "textures/Bus.png");
 
   car4->applyTranslate(translate(
       Vector4(-car4->centroid.x, -car4->centroid.y, -car4->centroid.z)));
   car4->applyScale(scale(Vector4(3.f, 3.f, 3.f)));
   car4->applyRotation(
-     rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
-  car4->applyTranslate(translate(Vector4(60.0f,4.f, 45.0f)));
+      rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
+  car4->applyTranslate(translate(Vector4(60.0f, 4.f, 45.0f)));
 
   auto cube = createMesh("cube.obj", "");
   cube->applyTranslate(translate(
@@ -217,6 +237,22 @@ int main()
   float half_shop_height = (shop->aabb.max_y - shop->aabb.min_y) / 2.0f;
   shop->applyTranslate(translate(Vector4(30.0f, half_shop_height, 5.0f)));
 
+  auto vendinha = createMesh("vendinha.obj", "textures/vendinha.png");
+  vendinha->applyTranslate(translate(
+      Vector4(-vendinha->centroid.x, -vendinha->centroid.y, -vendinha->centroid.z)));
+  vendinha->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
+  vendinha->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), 0.0f * M_PI / 180.0f));
+  vendinha->applyTranslate(translate(
+      Vector4(-10.f, 4.f, 37.f)));
+
+  auto japanesebuilding = createMesh("japanesebuilding.obj", "textures/japanesebuilding.png");
+  japanesebuilding->applyTranslate(translate(
+      Vector4(-japanesebuilding->centroid.x, -japanesebuilding->centroid.y, -japanesebuilding->centroid.z)));
+  japanesebuilding->applyScale(scale(Vector4(3.0f, 3.0f, 3.0f)));
+  japanesebuilding->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), 90.0f * M_PI / 180.0f));
+  japanesebuilding->applyTranslate(translate(
+      Vector4(-10.f, 10.f, 70.f)));
+
   auto road = createMesh("cube.obj", "");
   road->applyTranslate(translate(
       Vector4(-road->centroid.x, -road->centroid.y, -road->centroid.z)));
@@ -229,9 +265,11 @@ int main()
   auto sidewalk = createMesh("floor.obj", "textures/floor_texture.png");
   sidewalk->applyTranslate(translate(Vector4(
       -sidewalk->centroid.x, -sidewalk->centroid.y, -sidewalk->centroid.z)));
-  sidewalk->applyScale(scale(Vector4(1.0f, 1.0f, 1.0f)));
+  sidewalk->applyScale(scale(Vector4(1.0f, 1.6f, 0.5f)));
   sidewalk->applyRotation(
       rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
+  sidewalk->applyTranslate(translate(Vector4(
+      10.f, 0.2f, 0.f)));
 
   float sidewalk_half_height =
       (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
@@ -372,10 +410,8 @@ int main()
   auto creto = createMesh("Hip Hop Dancing.obj", "textures/Old man.png");
   creto->applyScale(scale(Vector4(.05f, .05f, .05f)));
   creto->applyTranslate(translate(
-    Vector4(25.f,0.f,30.f)));
-    ListMesh* ptr_creto = creto.get();
-
-
+      Vector4(25.f, 0.f, 30.f)));
+  ListMesh *ptr_creto = creto.get();
 
 #pragma region road cones
   auto road_cone1 = std::make_unique<Cone>(
@@ -443,6 +479,8 @@ int main()
   world.push_back(std::move(car3));
   world.push_back(std::move(car4));
   world.push_back(std::move(shop));
+  world.push_back(std::move(vendinha));
+  world.push_back(std::move(japanesebuilding));
   world.push_back(std::move(road));
   world.push_back(std::move(road_strip1));
   world.push_back(std::move(road_strip2));
@@ -469,9 +507,9 @@ int main()
   Point3 specular_plains(.1, .1, .1);
   Point3 floor_col(.9, .5, 0);
 
-  Point4 mirror_origin(19.0f, 0.01f, 18.1f);
-  Point4 mirror_width_pt(42.0f, 0.01f, 18.1f);
-  Point4 mirror_height_pt(19.0f, 10.0f, 18.1f);
+  Point4 mirror_origin(18.0f, 0.01f, 15.f);
+  Point4 mirror_width_pt(42.8f, 0.01f, 15.f);
+  Point4 mirror_height_pt(18.0f, 10.0f, 15.f);
 
   Point3 mirror_color(0, 0, 0);
   Point3 mirror_spec(1, 1, 1);
@@ -480,7 +518,7 @@ int main()
       mirror_origin, mirror_width_pt, mirror_height_pt, mirror_color,
       mirror_color, mirror_spec, 1.0f);
 
-  world.push_back(std::move(vitrine_espelhada));
+//  world.push_back(std::move(vitrine_espelhada));
 #pragma endregion
 
 #pragma endregion
@@ -796,7 +834,7 @@ int main()
     {
       // MODO B: RASTERIZAÇÃO (OpenGL)
       ClearBackground(BLUE); // Fundo cinza para diferenciar do raycasting
-      
+
       // Sincronizando a câmera do Raylib
       Camera3D glCamera = {0};
       glCamera.position = (RL_Vector3){lookFrom.x, lookFrom.y, lookFrom.z};
@@ -814,10 +852,10 @@ int main()
 
       //   DrawSphere((RL_Vector3){15.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
       //   DrawSphere((RL_Vector3){50.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
-       Point4 centroidCreto = ptr_creto->centroid;
-          ptr_creto->applyTranslate(translate(Vector4(-centroidCreto.x, -centroidCreto.y, -centroidCreto.z)));
-          ptr_creto->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), .5f * M_PI / 180.0f));
-          ptr_creto->applyTranslate(translate(Vector4(centroidCreto.x, centroidCreto.y, centroidCreto.z)));
+      Point4 centroidCreto = ptr_creto->centroid;
+      ptr_creto->applyTranslate(translate(Vector4(-centroidCreto.x, -centroidCreto.y, -centroidCreto.z)));
+      ptr_creto->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), .5f * M_PI / 180.0f));
+      ptr_creto->applyTranslate(translate(Vector4(centroidCreto.x, centroidCreto.y, centroidCreto.z)));
       for (const auto &obj : world)
       {
         // Tenta ver se o objeto é uma malha
@@ -827,21 +865,20 @@ int main()
 
           glm::vec3 glmPos = glm::vec3(lookFrom.x, lookFrom.y, lookFrom.z);
 
-       
           glm::vec3 glmTarget = glm::vec3(lookAt.x, lookAt.y, lookAt.z);
 
           glm::vec3 glmUp = glm::vec3(vUp.x, vUp.y, vUp.z);
 
           glm::mat4 view = glm::lookAt(glmPos, glmTarget, glmUp);
-         
+
           // Envia para o shader/mesh
           mesh->UpdateBuffers();
-          mesh->Draw(view,fov_atual);
+          mesh->Draw(view, fov_atual);
           BoundingBox box;
           box.min = (RL_Vector3){mesh->aabb.min_x, mesh->aabb.min_y, mesh->aabb.min_z};
           box.max = (RL_Vector3){mesh->aabb.max_x, mesh->aabb.max_y, mesh->aabb.max_z};
 
-           DrawBoundingBox(box, GREEN);
+          DrawBoundingBox(box, GREEN);
         }
       }
       // EndMode3D();
