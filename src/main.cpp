@@ -358,6 +358,14 @@ int main()
   auto lamp2 = std::make_unique<Sphere>(Point4(50.0f, 16.0f, 41.0f), 1.0f,
                                         lamp_color.color, lamp_color.color,
                                         lamp_color.spec);
+#pragma region creto
+
+  auto creto = createMesh("Hip Hop Dancing.obj", "textures/Old man.png");
+  creto->applyScale(scale(Vector4(.05f, .05f, .05f)));
+  creto->applyTranslate(translate(
+    Vector4(25.f,0.f,30.f)));
+
+
 
 #pragma region road cones
   auto road_cone1 = std::make_unique<Cone>(
@@ -443,6 +451,7 @@ int main()
   world.push_back(std::move(road_cone_base1));
   world.push_back(std::move(road_cone_base2));
   world.push_back(std::move(road_cone_base3));
+  world.push_back(std::move(creto));
 #pragma endregion
 
 #pragma region plains
