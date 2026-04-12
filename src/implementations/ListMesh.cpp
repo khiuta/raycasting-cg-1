@@ -227,7 +227,7 @@ void ListMesh::UpdateBuffers() {
     glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
     glBufferData(GL_ARRAY_BUFFER, flatData.size() * sizeof(float), flatData.data(), GL_STATIC_DRAW);
 }
-void ListMesh::Draw(glm::mat4 view) {
+void ListMesh::Draw(glm::mat4 view, float fov) {
     if (this->VAO == 0 || this->indices.empty()) return;
     glEnable(GL_DEPTH_TEST);
     
@@ -236,7 +236,7 @@ void ListMesh::Draw(glm::mat4 view) {
     
     glm::mat4 model = glm::mat4(1.0f);
     
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 1000.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(fov), (float)800 / (float)600, 0.1f, 1000.0f);
     glm::mat4 mvp = projection * view * model;
 
     this->shader->setMat4("u_MVP",mvp);

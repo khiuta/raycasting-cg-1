@@ -812,7 +812,7 @@ int main()
 
           // Envia para o shader/mesh
           mesh->UpdateBuffers();
-          mesh->Draw(view);
+          mesh->Draw(view,fov_atual);
           BoundingBox box;
           box.min = (RL_Vector3){mesh->aabb.min_x, mesh->aabb.min_y, mesh->aabb.min_z};
           box.max = (RL_Vector3){mesh->aabb.max_x, mesh->aabb.max_y, mesh->aabb.max_z};

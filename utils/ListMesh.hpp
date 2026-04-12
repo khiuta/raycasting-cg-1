@@ -39,7 +39,7 @@ class ListMesh : public Object {
     std::vector<float> FlattenVertices();
     void InitBuffers();
     void UpdateBuffers();
-    void Draw(glm::mat4 view);
+    void Draw(glm::mat4 view, float fov);
     const Point3& getColor() const override { return Point3(0, 0, 0); };
     const Point3& getDiffuse() const override { return Point3(0, 0, 0); };
     const Point3& getSpecular() const override { return Point3(0, 0, 0); };
