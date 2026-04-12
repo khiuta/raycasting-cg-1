@@ -180,14 +180,14 @@ int main()
   car2->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
   car2->applyTranslate(translate(Vector4(30.0f, car_half_height, 30.0f)));
 
-  auto car3 = createMesh("car_1.obj", "textures/car_1.png");
+  auto car3 = createMesh("sedan.obj", "textures/sedan.png");
 
   car3->applyTranslate(translate(
       Vector4(-car3->centroid.x, -car3->centroid.y, -car3->centroid.z)));
-  car3->applyScale(scale(Vector4(0.1f, 0.1f, 0.1f)));
-  car3->applyRotation(
-      rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
-  car3->applyTranslate(translate(Vector4(40.0f, car_half_height, 30.0f)));
+  car3->applyScale(scale(Vector4(2.f, 2.f, 2.f)));
+ // car3->applyRotation(
+   //   rotate(Vector4(0.0f, 1.0f, 0.0f), -00.0f * M_PI / 180.0f));
+  car3->applyTranslate(translate(Vector4(37.0f, car_half_height, 30.0f)));
 
   auto cube = createMesh("cube.obj", "");
   cube->applyTranslate(translate(
@@ -364,6 +364,7 @@ int main()
   creto->applyScale(scale(Vector4(.05f, .05f, .05f)));
   creto->applyTranslate(translate(
     Vector4(25.f,0.f,30.f)));
+    ListMesh* ptr_creto = creto.get();
 
 
 
@@ -803,6 +804,10 @@ int main()
 
       //   DrawSphere((RL_Vector3){15.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
       //   DrawSphere((RL_Vector3){50.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
+       Point4 centroidCreto = ptr_creto->centroid;
+          ptr_creto->applyTranslate(translate(Vector4(-centroidCreto.x, -centroidCreto.y, -centroidCreto.z)));
+          ptr_creto->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), .5f * M_PI / 180.0f));
+          ptr_creto->applyTranslate(translate(Vector4(centroidCreto.x, centroidCreto.y, centroidCreto.z)));
       for (const auto &obj : world)
       {
         // Tenta ver se o objeto é uma malha
@@ -818,7 +823,7 @@ int main()
           glm::vec3 glmUp = glm::vec3(vUp.x, vUp.y, vUp.z);
 
           glm::mat4 view = glm::lookAt(glmPos, glmTarget, glmUp);
-
+         
           // Envia para o shader/mesh
           mesh->UpdateBuffers();
           mesh->Draw(view,fov_atual);
