@@ -1,19 +1,16 @@
 #include "../../utils/Texture.hpp"
 #include <iostream>
 
-#define STB_IMAGE_IMPLEMENTATION
+// #define STB_IMAGE_IMPLEMENTATION
 #include "../../utils/stb_image.h"
 
-Texture::Texture(const std::string &filename) {
-  this->filename = filename;
-}
+Texture::Texture(const std::string &filename) { this->filename = filename; }
 
-Texture::Texture() {
-  this->filename = "";
-}
+Texture::Texture() { this->filename = ""; }
 
-void Texture::loadTexture(){
-  if(filename.size() == 0) return;
+void Texture::loadTexture() {
+  if (filename.size() == 0)
+    return;
 
   int w, h, nrChannels;
   unsigned char *data = stbi_load(filename.c_str(), &w, &h, &nrChannels, 4);
@@ -26,10 +23,11 @@ void Texture::loadTexture(){
   this->width = w;
   this->height = h;
 
-  colors.resize(h, std::vector<std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>>(w));
+  colors.resize(h,
+                std::vector<std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>>(w));
 
-  for(int i = 0; i < h; i++){
-    for(int j = 0; j < w; j++){
+  for (int i = 0; i < h; i++) {
+    for (int j = 0; j < w; j++) {
       int index = (i * w + j) * 4;
 
       uint8_t r = data[index];
@@ -42,6 +40,6 @@ void Texture::loadTexture(){
   }
 
   stbi_image_free(data);
-  
+
   std::cout << "Texture loaded: " << filename << " (" << w << "x" << h << ")\n";
 }

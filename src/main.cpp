@@ -472,6 +472,12 @@ int main()
   }
 #pragma endregion
 
+#pragma region  trashes
+  auto taxi = createMesh("Taxi.obj","textures/Taxi 256x256.png");
+  taxi->applyScale(scale(Vector4(3.8f,3.8f,3.8f)));
+  taxi->applyRotation(rotate(Vector4(0.f,1.f,0.f), 90.0f * M_PI / 180.0f ));
+  taxi->applyTranslate(translate(Vector4(25.f,0.f,55.f)));
+
   world.push_back(std::move(car1));
   world.push_back(std::move(car2));
   world.push_back(std::move(car3));
@@ -499,6 +505,8 @@ int main()
   world.push_back(std::move(road_cone_base2));
   world.push_back(std::move(road_cone_base3));
   world.push_back(std::move(creto));
+  world.push_back(std::move(taxi));
+
 #pragma endregion
 
 #pragma region plains
