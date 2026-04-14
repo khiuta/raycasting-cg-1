@@ -159,23 +159,22 @@ int main()
   farol1_carro2.color = Point3(1.0f, .7f, 0.0f);
   farol1_carro2.position = Point4(28.5f, 1.5f, 34.5f);
   farol1_carro2.direction = Vector4(0.0f, -0.7f, 1.0f);
-  farol1_carro2.cutoff = std::cos(8.f* M_PI / 180.0f);
-  farol1_carro2.outer_cutoff = std::cos(20.f* M_PI / 180.0f);
+  farol1_carro2.cutoff = std::cos(8.f * M_PI / 180.0f);
+  farol1_carro2.outer_cutoff = std::cos(20.f * M_PI / 180.0f);
 
-   Light farol2_carro2;
+  Light farol2_carro2;
   farol2_carro2.type = LightType::SPOTLIGHT;
   farol2_carro2.color = Point3(1.0f, 0.7f, 0.0f);
   farol2_carro2.position = Point4(30.9f, 1.5f, 34.5f);
   farol2_carro2.direction = Vector4(0.0f, -0.7f, 1.0f);
-  farol2_carro2.cutoff = std::cos(8.f* M_PI / 180.0f);
-  farol2_carro2.outer_cutoff = std::cos(20.f* M_PI / 180.0f);
+  farol2_carro2.cutoff = std::cos(8.f * M_PI / 180.0f);
+  farol2_carro2.outer_cutoff = std::cos(20.f * M_PI / 180.0f);
 
   lights.push_back(directional);
   lights.push_back(post_spot);
   lights.push_back(post_spot2);
   lights.push_back(farol1_carro2);
   lights.push_back(farol2_carro2);
-
 
 #pragma region world objects
   auto car1 = createMesh("car_1.obj", "textures/car_1.png");
@@ -226,6 +225,11 @@ int main()
   {
     face->reflectivity = 1.0f;
   }
+
+  auto taxi = createMesh("Taxi.obj", "textures/Taxi 256x256.png");
+  taxi->applyScale(scale(Vector4(3.8f, 3.8f, 3.8f)));
+  taxi->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), 90.0f * M_PI / 180.0f));
+  taxi->applyTranslate(translate(Vector4(25.f, 0.f, 55.f)));
 
   auto shop = createMesh("autocreto.obj", "textures/autocretotexture.png");
   shop->applyTranslate(translate(
@@ -472,11 +476,34 @@ int main()
   }
 #pragma endregion
 
-#pragma region  trashes
-  auto taxi = createMesh("Taxi.obj","textures/Taxi 256x256.png");
-  taxi->applyScale(scale(Vector4(3.8f,3.8f,3.8f)));
-  taxi->applyRotation(rotate(Vector4(0.f,1.f,0.f), 90.0f * M_PI / 180.0f ));
-  taxi->applyTranslate(translate(Vector4(25.f,0.f,55.f)));
+  std::unique_ptr<ListMesh> predio1 = createMesh("IndustrialBuilding.obj", "textures/industrial_building_front_lowres.png");
+
+  predio1->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
+
+  std::unique_ptr<ListMesh> lateralPredio1 = createMesh("IndustrialBuilding.obj", "textures/industrial_building_front_lowres.png");
+
+  lateralPredio1->applyScale(scale(Vector4(1.5f, 2.5f, 2.5f)));
+  lateralPredio1->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), 90.f * M_PI / 180.0f));
+  lateralPredio1->applyTranslate(translate(Vector4(10.f, 0.f, -5.f)));
+  std::unique_ptr<ListMesh> predio2 = createMesh("BrickBuilding.obj", "textures/brick_buillding_front_lowres.png");
+
+  predio2->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
+  predio2->applyTranslate(translate(Vector4(-20.f, 0.f, 0.f)));
+
+#pragma region trashes
+
+  std::unique_ptr<ListMesh> trash1 = createMesh("trash-can.obj","textures/trash-can.png");
+  trash1->applyScale(scale(Vector4(2.f,2.f,2.f)));
+  trash1->applyRotation(rotate(Vector4(0.f,1.f,0.f),90.f * M_PI / 180.0f));
+  trash1->applyTranslate(translate(Vector4(17.f,0.f,5.f)));
+  world.push_back(std::move(trash1));
+
+  std::unique_ptr<ListMesh> trash2 = createMesh("trash-can.obj","textures/trash-can.png");
+  trash2->applyScale(scale(Vector4(2.f,2.f,2.f)));
+  trash2->applyRotation(rotate(Vector4(0.f,1.f,0.f),-90.f * M_PI / 180.0f));
+  trash2->applyTranslate(translate(Vector4(-.5f,0.f,32.f)));
+  world.push_back(std::move(trash2));
+
 
   world.push_back(std::move(car1));
   world.push_back(std::move(car2));
@@ -506,6 +533,9 @@ int main()
   world.push_back(std::move(road_cone_base3));
   world.push_back(std::move(creto));
   world.push_back(std::move(taxi));
+  world.push_back(std::move(predio1));
+  world.push_back(std::move(lateralPredio1));
+  world.push_back(std::move(predio2));
 
 #pragma endregion
 
@@ -572,7 +602,7 @@ int main()
     }
 
     // picking
-    if (!useRasterization && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if ( IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
       float mouseX = GetMouseX();
       float mouseY = GetMouseY();
@@ -827,25 +857,8 @@ int main()
 
     if (useRasterization)
     {
-      ClearBackground(BLUE);
+      ClearBackground(GetColor(0x031c47));
 
-      // syncing raylib camera
-      Camera3D glCamera = {0};
-      glCamera.position = (RL_Vector3){lookFrom.x, lookFrom.y, lookFrom.z};
-      glCamera.target = (RL_Vector3){lookAt.x, lookAt.y, lookAt.z};
-      glCamera.up = (RL_Vector3){vUp.x, vUp.y, vUp.z};
-      glCamera.fovy = fov_atual;
-      glCamera.projection = CAMERA_PERSPECTIVE;
-
-      //  BeginMode3D(glCamera);
-
-      // DrawGrid(100, 5.0f); // Uma grade no chão (plano XZ)
-
-      //  DrawCube((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, RED);
-      //  DrawCubeWires((RL_Vector3){lookAt.x, lookAt.y, lookAt.z}, 2.0f, 2.0f, 2.0f, MAROON);
-
-      //   DrawSphere((RL_Vector3){15.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
-      //   DrawSphere((RL_Vector3){50.0f, 16.0f, 41.0f}, 1.0f, YELLOW);
       Point4 centroidCreto = ptr_creto->centroid;
       ptr_creto->applyTranslate(translate(Vector4(-centroidCreto.x, -centroidCreto.y, -centroidCreto.z)));
       ptr_creto->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), .5f * M_PI / 180.0f));
@@ -867,14 +880,12 @@ int main()
 
           mesh->UpdateBuffers();
           mesh->Draw(view, fov_atual);
-          BoundingBox box;
-          box.min = (RL_Vector3){mesh->aabb.min_x, mesh->aabb.min_y, mesh->aabb.min_z};
-          box.max = (RL_Vector3){mesh->aabb.max_x, mesh->aabb.max_y, mesh->aabb.max_z};
+         
 
-          DrawBoundingBox(box, GREEN);
+          
         }
       }
-      // EndMode3D();
+     
     }
     else
     {
