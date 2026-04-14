@@ -1,14 +1,13 @@
 #include "../../utils/AABB.hpp"
 #include "../../utils/BVH.hpp"
 #include <cmath>
-#include <algorithm> // Necessário para std::min, std::max e std::swap
+#include <algorithm>
 
 bool AABB::IntersectRayAABB(const Point4& origin, const Vector4& dir, float& t_hit) const {
-    // Começa com intervalo infinito
     float t_min = -std::numeric_limits<float>::infinity();
     float t_max = std::numeric_limits<float>::infinity();
     
-    // --- EIXO X ---
+    // x axis
     if (std::abs(dir.x) < 1e-9f) { 
         if (origin.x < min_x || origin.x > max_x) return false;
     } else {
@@ -21,7 +20,7 @@ bool AABB::IntersectRayAABB(const Point4& origin, const Vector4& dir, float& t_h
         if (t_max <= t_min) return false;
     }
 
-    // --- EIXO Y ---
+    // y axis
     if (std::abs(dir.y) < 1e-9f) {
         if (origin.y < min_y || origin.y > max_y) return false;
     } else {
@@ -34,7 +33,7 @@ bool AABB::IntersectRayAABB(const Point4& origin, const Vector4& dir, float& t_h
         if (t_max <= t_min) return false;
     }
 
-    // --- EIXO Z ---
+    // z axis
     if (std::abs(dir.z) < 1e-9f) {
         if (origin.z < min_z || origin.z > max_z) return false;
     } else {
@@ -76,19 +75,16 @@ void AABB::refit() {
     min_z = 1e30f; max_z = -1e30f;
 
     for (const auto& tri : t) {
-        // CORREÇÃO 2: Acessando atributos x,y,z com a setinha '->'
+        // expands to include the points
         
-        // Expande para incluir p1
         min_x = std::min(min_x, tri->p1->x); max_x = std::max(max_x, tri->p1->x);
         min_y = std::min(min_y, tri->p1->y); max_y = std::max(max_y, tri->p1->y);
         min_z = std::min(min_z, tri->p1->z); max_z = std::max(max_z, tri->p1->z);
 
-        // Expande para incluir p2
         min_x = std::min(min_x, tri->p2->x); max_x = std::max(max_x, tri->p2->x);
         min_y = std::min(min_y, tri->p2->y); max_y = std::max(max_y, tri->p2->y);
         min_z = std::min(min_z, tri->p2->z); max_z = std::max(max_z, tri->p2->z);
 
-        // Expande para incluir p3
         min_x = std::min(min_x, tri->p3->x); max_x = std::max(max_x, tri->p3->x);
         min_y = std::min(min_y, tri->p3->y); max_y = std::max(max_y, tri->p3->y);
         min_z = std::min(min_z, tri->p3->z); max_z = std::max(max_z, tri->p3->z);
@@ -121,7 +117,6 @@ void AABB::buildBVH(int depth) {
   auto right_node = std::make_unique<AABB>();
 
   for (auto* tri : t) {
-      // CORREÇÃO 3: Desreferenciando para calcular centróide no BVH
       Point4 c = (*tri->p1 + *tri->p2 + *tri->p3) / 3.0f;
       bool goes_left = false;
       

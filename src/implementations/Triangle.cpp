@@ -28,7 +28,6 @@ Triangle::Triangle(Point4 *p1, Point4 *p2, Point4 *p3, const Vector4 &n){
   this->spec_color = Point3(.7, .7, .7);
 }
 
-// CONSTRUTOR 2: Com suporte a textura
 Triangle::Triangle(Point4 *p1, Point4 *p2, Point4 *p3, const Vector4 &n, const Point3 &vt1, const Point3 &vt2, const Point3 &vt3){
   this->p1 = p1;
   this->p2 = p2;
@@ -65,17 +64,14 @@ bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
   double t = 0;
 
   if(std::abs(denominator) > 0.0001f){
-    // Usamos *p1 para calcular a distância do vértice à origem do raio
     Vector4 p1_to_origin = *(this->p1) - origin;
     t = dot(p1_to_origin, this->normal) / denominator; 
   } else return false;
 
-  // Verifica intervalo válido antes de cálculos pesados
   if (t <= t_min || t >= t_max) return false;
 
   Point4 p_int = origin + t*dir;
 
-  // Usamos * para acessar as posições originais e calcular coordenadas baricêntricas
   Vector4 s1 = p_int - *(this->p1);
   Vector4 s2 = p_int - *(this->p2);
   Vector4 s3 = p_int - *(this->p3);
@@ -96,7 +92,7 @@ bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
       Texture* tex = this->mesh->texture;
       
       float u_val = uv.x - std::floor(uv.x);
-      float v_val = 1.0f - (uv.y - std::floor(uv.y)); // Invertendo V (padrão OpenGL)
+      float v_val = 1.0f - (uv.y - std::floor(uv.y));
 
       int tex_u = (int)(u_val * (tex->width - 1));
       int tex_v = (int)(v_val * (tex->height - 1));
@@ -130,16 +126,13 @@ bool Triangle::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, 
 }
 
 void Triangle::recalculateProperties() {
-    // 1. Recalcula as arestas baseadas nas novas posições apontadas por p1, p2 e p3
     this->e1 = *(this->p2) - *(this->p1); 
     this->e2 = *(this->p3) - *(this->p2);
     this->e3 = *(this->p3) - *(this->p1);
 
-    // 2. Recalcula a Normal usando o produto vetorial de e1 e e3
     Vector4 newNormal = cross(this->e1, this->e3); 
     this->normal = newNormal;
     this->normal.normalize();
 
-    // 3. Recalcula a Área
     this->area = newNormal.length() / 2.0; 
 }

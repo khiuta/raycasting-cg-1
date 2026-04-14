@@ -20,7 +20,7 @@
 #define Material RL_Material
 
 #include <raylib.h>
-#include <rlgl.h> // Adicionado para permitir o uso de matrizes primitivas OpenGL
+#include <rlgl.h> // use opengl primitive matrices
 
 #undef Vector3
 #undef Vector4
@@ -100,14 +100,12 @@ std::unique_ptr<ListMesh> createMesh(const std::string &objPath, const std::stri
   return mesh;
 }
 
-// Calcula a distância focal (dWindow) com base no FOV em graus
 float calculate_dWindow_from_FOV(float fov_degrees, float wWindow)
 {
   float fov_radians = fov_degrees * M_PI / 180.0f;
   return (wWindow / 2.0f) / std::tan(fov_radians / 2.0f);
 }
 
-// Calcula o FOV em graus com base na distância focal atual (dWindow)
 float calculate_FOV_from_dWindow(float dWindow, float wWindow)
 {
   float fov_radians = 2.0f * std::atan((wWindow / 2.0f) / dWindow);
@@ -523,8 +521,9 @@ int main()
 
 #pragma endregion
 
-  // Calculando o dWindow e FOV iniciais
-  float fov_atual = 53.0f; // Aproximadamente o seu valor original de dWindow = 4 e wWindow = 4
+#pragma endregion
+
+  float fov_atual = 53.0f;
   dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
 
   w = (lookFrom - lookAt);
@@ -540,7 +539,7 @@ int main()
   // glViewport(0,0,screenWidth,screenHeight);
   for (const auto &obj : world)
   {
-    // Tenta ver se o objeto é uma malha
+    // check if the object is a mesh
     ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
     if (mesh && mesh->indices.size() > 1)
     {
@@ -552,23 +551,19 @@ int main()
   Texture2D tex = LoadTextureFromImage(rayImage);
 
   bool redraw = true;
-  bool useRasterization = false; // A nossa variável de Toggle!
+  bool useRasterization = false;
   SetTargetFPS(60);
 
   while (!WindowShouldClose())
   {
-    // ----------------------------------------------------
-    // 1. INPUTS E INTERAÇÃO
-    // ----------------------------------------------------
-
-    // Toggle para trocar entre Raycasting e OpenGL
+    // rasterization toggle on/off
     if (IsKeyPressed(KEY_SPACE))
     {
       useRasterization = !useRasterization;
-      redraw = true; // Força uma atualização caso volte pro Raycasting
+      redraw = true;
     }
 
-    // picking (Mantido apenas no modo Raycasting por enquanto)
+    // picking
     if (!useRasterization && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
       float mouseX = GetMouseX();
@@ -652,7 +647,7 @@ int main()
       }
     }
 
-    // Controles da Câmera (Agora afetam ambos os modos)
+    // camera control
     if (IsKeyPressed(KEY_ONE))
     {
       projectionType = Projection::Perspective;
@@ -690,7 +685,7 @@ int main()
       redraw = true;
     }
 
-    // Ajuste da distância focal (Q e E)
+    // focal distance control
     if (IsKeyDown(KEY_E))
     {
       dWindow += 0.2f;
@@ -706,34 +701,31 @@ int main()
       redraw = true;
     }
 
-    // Ajuste DIRETO do FOV em graus (Z e X)
+    // fov adjust
     if (IsKeyDown(KEY_X))
-    { // Zoom Out (Aumenta o ângulo de visão)
+    { // zoom out
       fov_atual += 1.0f;
       if (fov_atual > 160.0f)
-        fov_atual = 160.0f; // Trava para não inverter a tela
+        fov_atual = 160.0f;
       dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
       redraw = true;
     }
     if (IsKeyDown(KEY_Z))
-    { // Zoom In (Diminui o ângulo de visão)
+    { // zoom in
       fov_atual -= 1.0f;
       if (fov_atual < 10.0f)
-        fov_atual = 10.0f; // Trava o zoom máximo
+        fov_atual = 10.0f;
       dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
       redraw = true;
     }
 
-    // Sincronização Matemática da Câmera
+    // camera sync
     w = (lookFrom - lookAt);
     w.normalize();
     u = cross(vUp, w);
     u.normalize();
     v_cam = cross(w, u);
 
-    // ----------------------------------------------------
-    // 2. LÓGICA DE RENDERIZAÇÃO
-    // ----------------------------------------------------
     if (!useRasterization && redraw)
     {
       float oblique_scale = 0.5f;
@@ -825,17 +817,11 @@ int main()
       redraw = false;
     }
 
-    // ----------------------------------------------------
-    // 3. DESENHO NA TELA
-    // ----------------------------------------------------
-    // BeginDrawing();
-
     if (useRasterization)
     {
-      // MODO B: RASTERIZAÇÃO (OpenGL)
-      ClearBackground(BLUE); // Fundo cinza para diferenciar do raycasting
+      ClearBackground(BLUE);
 
-      // Sincronizando a câmera do Raylib
+      // syncing raylib camera
       Camera3D glCamera = {0};
       glCamera.position = (RL_Vector3){lookFrom.x, lookFrom.y, lookFrom.z};
       glCamera.target = (RL_Vector3){lookAt.x, lookAt.y, lookAt.z};
@@ -858,7 +844,7 @@ int main()
       ptr_creto->applyTranslate(translate(Vector4(centroidCreto.x, centroidCreto.y, centroidCreto.z)));
       for (const auto &obj : world)
       {
-        // Tenta ver se o objeto é uma malha
+        // check if the object is a mesh
         ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
         if (mesh)
         {
@@ -871,7 +857,6 @@ int main()
 
           glm::mat4 view = glm::lookAt(glmPos, glmTarget, glmUp);
 
-          // Envia para o shader/mesh
           mesh->UpdateBuffers();
           mesh->Draw(view, fov_atual);
           BoundingBox box;
@@ -885,7 +870,6 @@ int main()
     }
     else
     {
-      // Desenha a imagem pesada calculada pela CPU
       ClearBackground(BLACK);
       DrawTexture(tex, 0, 0, WHITE);
     }
@@ -893,7 +877,6 @@ int main()
     // ui
     DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
 
-    // Mostra qual motor de renderização está ativo
     if (useRasterization)
     {
       DrawText("MOTOR: RASTERIZACAO (GPU) - Aperte ESPACO para Raycasting", 10, nLin - 80, 20, GREEN);

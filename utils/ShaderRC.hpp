@@ -15,8 +15,7 @@ class ShaderRC {
 public:
     
     unsigned int ID;
-
-    // Construtor lê e constrói o shader a partir dos caminhos dos arquivos
+    
     ShaderRC(const char* vertexPath, const char* fragmentPath);
     
     ~ShaderRC();

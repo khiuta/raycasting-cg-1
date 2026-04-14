@@ -22,7 +22,7 @@ ShaderRC::ShaderRC(const char* vertexPath, const char* fragmentPath) {
         vShaderFile.close();
         fShaderFile.close();
 
-        // Converter stream para string
+        // stream to string
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
     }
@@ -41,7 +41,7 @@ ShaderRC::ShaderRC(const char* vertexPath, const char* fragmentPath) {
     glCompileShader(vertex);
     checkCompileErrors(vertex, "VERTEX");
 
-    // Fragment Shader
+    // fragment shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);

@@ -16,7 +16,6 @@ class Triangle : public Object {
     float reflectivity = 0.0f;
     ListMesh *mesh;
 
-    // Construtores agora recebem ponteiros
     Triangle(Point4 *p1, Point4 *p2, Point4 *p3, const Vector4 &n);
     Triangle(Point4 *p1, Point4 *p2, Point4 *p3, const Vector4 &n, const Point3 &vt1, const Point3 &vt2, const Point3 &vt3);
 
