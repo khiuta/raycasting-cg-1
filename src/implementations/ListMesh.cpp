@@ -154,7 +154,7 @@ void ListMesh::Draw(glm::mat4 view, float fov) {
     
     glm::mat4 model = glm::mat4(1.0f);
     
-    glm::mat4 projection = glm::perspective(glm::radians(fov), (float)800 / (float)600, 0.1f, 1000.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(fov*0.75f), (float)800 / (float)600, 0.1f, 1000.0f);
     glm::mat4 mvp = projection * view * model;
 
     this->shader->setMat4("u_MVP",mvp);

@@ -1,16 +1,16 @@
-#include <cmath>
 #include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <memory>
-#include <string>
-#include <sstream>
-#include <numbers>
 #include <chrono>
+#include <cmath>
+#include <fstream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <memory>
+#include <numbers>
+#include <sstream>
+#include <string>
+#include <vector>
 // #include "../utils/glad.h"
 #define Vector3 RL_Vector3
 #define Vector4 RL_Vector4
@@ -29,19 +29,19 @@
 #undef Rectangle
 #undef Material
 
-#include "../utils/Point4.hpp"
-#include "../utils/Point3.hpp"
-#include "../utils/Vector4.hpp"
-#include "../utils/Triangle.hpp"
-#include "../utils/Object.hpp"
+#include "../utils/AABB.hpp"
+#include "../utils/Cone.hpp"
+#include "../utils/Cylinder.hpp"
 #include "../utils/HitRecord.hpp"
 #include "../utils/ListMesh.hpp"
+#include "../utils/Object.hpp"
 #include "../utils/Plain.hpp"
+#include "../utils/Point3.hpp"
+#include "../utils/Point4.hpp"
 #include "../utils/Rectangle.hpp"
-#include "../utils/AABB.hpp"
 #include "../utils/Sphere.hpp"
-#include "../utils/Cylinder.hpp"
-#include "../utils/Cone.hpp"
+#include "../utils/Triangle.hpp"
+#include "../utils/Vector4.hpp"
 
 #include "./aux_functions.hpp"
 
@@ -62,8 +62,7 @@ float ymin = -1.5f, ymax = 1.5f;
 
 Projection projectionType = Projection::Perspective;
 
-struct Material
-{
+struct Material {
   Point3 color;
   Point3 spec;
 };
@@ -83,8 +82,8 @@ Vector4 u, v_cam, w;
 
 std::vector<std::unique_ptr<Object>> world;
 
-std::unique_ptr<ListMesh> createMesh(const std::string &objPath, const std::string &texturePath)
-{
+std::unique_ptr<ListMesh> createMesh(const std::string &objPath,
+                                     const std::string &texturePath) {
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
   std::vector<std::unique_ptr<Point3>> vt;
@@ -100,20 +99,17 @@ std::unique_ptr<ListMesh> createMesh(const std::string &objPath, const std::stri
   return mesh;
 }
 
-float calculate_dWindow_from_FOV(float fov_degrees, float wWindow)
-{
+float calculate_dWindow_from_FOV(float fov_degrees, float wWindow) {
   float fov_radians = fov_degrees * M_PI / 180.0f;
   return (wWindow / 2.0f) / std::tan(fov_radians / 2.0f);
 }
 
-float calculate_FOV_from_dWindow(float dWindow, float wWindow)
-{
+float calculate_FOV_from_dWindow(float dWindow, float wWindow) {
   float fov_radians = 2.0f * std::atan((wWindow / 2.0f) / dWindow);
   return fov_radians * 180.0f / M_PI;
 }
 
-int main()
-{
+int main() {
   std::string obj_name = "car_1.obj";
 
   Point3 spec = Point3(0.5f, 0.5f, 0.5f);
@@ -190,7 +186,7 @@ int main()
   float car_half_height = (car1->aabb.max_y - car1->aabb.min_y) / 2.0f;
   car1->applyTranslate(translate(Vector4(20.0f, car_half_height, 30.0f)));
 
-  auto car2 = createMesh("fuscao.obj", "textures/gulf_blue.png");
+  std::unique_ptr<ListMesh> car2 = createMesh("fuscao.obj", "textures/gulf_blue.png");
 
   car2->applyTranslate(translate(
       Vector4(-car2->centroid.x, -car2->centroid.y, -car2->centroid.z)));
@@ -206,7 +202,7 @@ int main()
   //   rotate(Vector4(0.0f, 1.0f, 0.0f), -00.0f * M_PI / 180.0f));
   car3->applyTranslate(translate(Vector4(37.0f, car_half_height, 30.0f)));
 
-  auto car4 = createMesh("Bus.obj", "textures/Bus.png");
+  std::unique_ptr<ListMesh> car4 = createMesh("Bus.obj", "textures/Bus.png");
 
   car4->applyTranslate(translate(
       Vector4(-car4->centroid.x, -car4->centroid.y, -car4->centroid.z)));
@@ -215,23 +211,22 @@ int main()
       rotate(Vector4(0.0f, 1.0f, 0.0f), -90.0f * M_PI / 180.0f));
   car4->applyTranslate(translate(Vector4(60.0f, 4.f, 45.0f)));
 
-  auto cube = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> cube = createMesh("cube.obj", "");
   cube->applyTranslate(translate(
       Vector4(-cube->centroid.x, -cube->centroid.y, -cube->centroid.z)));
   cube->applyScale(scale(Vector4(25.0f, 8.0f, 10.0f)));
   float half_cube_height = (cube->aabb.max_y - cube->aabb.min_y) / 2.0f;
   cube->applyTranslate(translate(Vector4(0.0f, half_cube_height, -25.0f)));
-  for (auto &face : cube->faces)
-  {
+  for (auto &face : cube->faces) {
     face->reflectivity = 1.0f;
   }
 
-  auto taxi = createMesh("Taxi.obj", "textures/Taxi 256x256.png");
+  std::unique_ptr<ListMesh> taxi = createMesh("Taxi.obj", "textures/Taxi 256x256.png");
   taxi->applyScale(scale(Vector4(3.8f, 3.8f, 3.8f)));
   taxi->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), 90.0f * M_PI / 180.0f));
   taxi->applyTranslate(translate(Vector4(25.f, 0.f, 55.f)));
 
-  auto shop = createMesh("autocreto.obj", "textures/autocretotexture.png");
+  std::unique_ptr<ListMesh> shop = createMesh("autocreto.obj", "textures/autocretotexture.png");
   shop->applyTranslate(translate(
       Vector4(-shop->centroid.x, -shop->centroid.y, -shop->centroid.z)));
   shop->applyScale(scale(Vector4(6.0f, 10.0f, 5.0f)));
@@ -239,23 +234,25 @@ int main()
   float half_shop_height = (shop->aabb.max_y - shop->aabb.min_y) / 2.0f;
   shop->applyTranslate(translate(Vector4(30.0f, half_shop_height, 5.0f)));
 
-  auto vendinha = createMesh("vendinha.obj", "textures/vendinha.png");
-  vendinha->applyTranslate(translate(
-      Vector4(-vendinha->centroid.x, -vendinha->centroid.y, -vendinha->centroid.z)));
+  std::unique_ptr<ListMesh> vendinha = createMesh("vendinha.obj", "textures/vendinha.png");
+  vendinha->applyTranslate(translate(Vector4(
+      -vendinha->centroid.x, -vendinha->centroid.y, -vendinha->centroid.z)));
   vendinha->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
-  vendinha->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), 0.0f * M_PI / 180.0f));
-  vendinha->applyTranslate(translate(
-      Vector4(-10.f, 4.f, 37.f)));
+  vendinha->applyRotation(
+      rotate(Vector4(0.0f, 1.0f, 0.0f), 0.0f * M_PI / 180.0f));
+  vendinha->applyTranslate(translate(Vector4(-10.f, 4.f, 37.f)));
 
-  auto japanesebuilding = createMesh("japanesebuilding.obj", "textures/japanesebuilding.png");
+  std::unique_ptr<ListMesh> japanesebuilding =
+      createMesh("japanesebuilding.obj", "textures/japanesebuilding.png");
   japanesebuilding->applyTranslate(translate(
-      Vector4(-japanesebuilding->centroid.x, -japanesebuilding->centroid.y, -japanesebuilding->centroid.z)));
+      Vector4(-japanesebuilding->centroid.x, -japanesebuilding->centroid.y,
+              -japanesebuilding->centroid.z)));
   japanesebuilding->applyScale(scale(Vector4(3.0f, 3.0f, 3.0f)));
-  japanesebuilding->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), 90.0f * M_PI / 180.0f));
-  japanesebuilding->applyTranslate(translate(
-      Vector4(-10.f, 10.f, 70.f)));
+  japanesebuilding->applyRotation(
+      rotate(Vector4(0.0f, 1.0f, 0.0f), 90.0f * M_PI / 180.0f));
+  japanesebuilding->applyTranslate(translate(Vector4(-10.f, 10.f, 70.f)));
 
-  auto road = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road = createMesh("cube.obj", "");
   road->applyTranslate(translate(
       Vector4(-road->centroid.x, -road->centroid.y, -road->centroid.z)));
   road->applyScale(scale(Vector4(60.0f, 0.01f, 10.0f)));
@@ -264,21 +261,20 @@ int main()
 
 #pragma region vegetation
 
-  auto sidewalk = createMesh("floor.obj", "textures/floor_texture.png");
+  std::unique_ptr<ListMesh> sidewalk = createMesh("floor.obj", "textures/floor_texture.png");
   sidewalk->applyTranslate(translate(Vector4(
       -sidewalk->centroid.x, -sidewalk->centroid.y, -sidewalk->centroid.z)));
   sidewalk->applyScale(scale(Vector4(1.0f, 1.6f, 0.5f)));
   sidewalk->applyRotation(
       rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
-  sidewalk->applyTranslate(translate(Vector4(
-      10.f, 0.2f, 0.f)));
+  sidewalk->applyTranslate(translate(Vector4(10.f, 0.2f, 0.f)));
 
   float sidewalk_half_height =
       (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
   sidewalk->applyTranslate(translate(Vector4(10.0f, -0.3f, 35.0f)));
   world.push_back(std::move(sidewalk));
 
-  auto tree = createMesh("tree01.obj", "textures/tree01_spring.png");
+  std::unique_ptr<ListMesh> tree = createMesh("tree01.obj", "textures/tree01_spring.png");
   tree->applyTranslate(translate(
       Vector4(-tree->centroid.x, -tree->centroid.y, -tree->centroid.z)));
   tree->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
@@ -286,7 +282,7 @@ int main()
   tree->applyTranslate(translate(Vector4(10.0f, 5.0f, 40.0f)));
   world.push_back(std::move(tree));
 
-  auto bush = createMesh("bush01.obj", "textures/bush1_spring.png");
+  std::unique_ptr<ListMesh> bush = createMesh("bush01.obj", "textures/bush1_spring.png");
   bush->applyTranslate(translate(
       Vector4(-bush->centroid.x, -bush->centroid.y, -bush->centroid.z)));
   bush->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
@@ -294,7 +290,7 @@ int main()
   bush->applyTranslate(translate(Vector4(48.0f, 2.0f, 40.0f)));
   world.push_back(std::move(bush));
 
-  auto bush2 = createMesh("bush06.obj", "textures/bush6_spring5.png");
+  std::unique_ptr<ListMesh> bush2 = createMesh("bush06.obj", "textures/bush6_spring5.png");
   bush2->applyTranslate(translate(
       Vector4(-bush2->centroid.x, -bush2->centroid.y, -bush2->centroid.z)));
   bush2->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
@@ -303,7 +299,7 @@ int main()
   world.push_back(std::move(bush2));
 
 #pragma region road strips
-  auto road_strip1 = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road_strip1 = createMesh("cube.obj", "");
   road_strip1->applyTranslate(
       translate(Vector4(-road_strip1->centroid.x, -road_strip1->centroid.y,
                         -road_strip1->centroid.z)));
@@ -311,13 +307,12 @@ int main()
   road_strip1->applyTranslate(
       translate(Vector4(30.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip1->faces)
-  {
+  for (auto &face : road_strip1->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
-  auto road_strip2 = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road_strip2 = createMesh("cube.obj", "");
   road_strip2->applyTranslate(
       translate(Vector4(-road_strip2->centroid.x, -road_strip2->centroid.y,
                         -road_strip2->centroid.z)));
@@ -325,13 +320,12 @@ int main()
   road_strip2->applyTranslate(
       translate(Vector4(42.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip2->faces)
-  {
+  for (auto &face : road_strip2->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
-  auto road_strip3 = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road_strip3 = createMesh("cube.obj", "");
   road_strip3->applyTranslate(
       translate(Vector4(-road_strip3->centroid.x, -road_strip3->centroid.y,
                         -road_strip3->centroid.z)));
@@ -339,13 +333,12 @@ int main()
   road_strip3->applyTranslate(
       translate(Vector4(54.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip3->faces)
-  {
+  for (auto &face : road_strip3->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
-  auto road_strip4 = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road_strip4 = createMesh("cube.obj", "");
   road_strip4->applyTranslate(
       translate(Vector4(-road_strip4->centroid.x, -road_strip4->centroid.y,
                         -road_strip4->centroid.z)));
@@ -353,8 +346,7 @@ int main()
   road_strip4->applyTranslate(
       translate(Vector4(66.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip4->faces)
-  {
+  for (auto &face : road_strip4->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -367,13 +359,12 @@ int main()
   road_strip5->applyTranslate(
       translate(Vector4(18.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip5->faces)
-  {
+  for (auto &face : road_strip5->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
 
-  auto road_strip6 = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road_strip6 = createMesh("cube.obj", "");
   road_strip6->applyTranslate(
       translate(Vector4(-road_strip6->centroid.x, -road_strip6->centroid.y,
                         -road_strip6->centroid.z)));
@@ -381,8 +372,7 @@ int main()
   road_strip6->applyTranslate(
       translate(Vector4(6.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip6->faces)
-  {
+  for (auto &face : road_strip6->faces) {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -409,10 +399,9 @@ int main()
                                         lamp_color.spec);
 #pragma region creto
 
-  auto creto = createMesh("Hip Hop Dancing.obj", "textures/Old man.png");
+  std::unique_ptr<ListMesh> creto = createMesh("Hip Hop Dancing.obj", "textures/Old man.png");
   creto->applyScale(scale(Vector4(.05f, .05f, .05f)));
-  creto->applyTranslate(translate(
-      Vector4(25.f, 0.f, 30.f)));
+  creto->applyTranslate(translate(Vector4(25.f, 0.f, 30.f)));
   ListMesh *ptr_creto = creto.get();
 
 #pragma region road cones
@@ -420,7 +409,7 @@ int main()
       Point4(30.0f, 0.0f, 40.0f), .8f, true, Point4(30.0f, 2.0f, 40.0f),
       road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
-  auto road_cone_base1 = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road_cone_base1 = createMesh("cube.obj", "");
   road_cone_base1->applyTranslate(translate(
       Vector4(-road_cone_base1->centroid.x, -road_cone_base1->centroid.y,
               -road_cone_base1->centroid.z)));
@@ -430,8 +419,7 @@ int main()
   road_cone_base1->applyTranslate(
       translate(Vector4(30.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base1->faces)
-  {
+  for (auto &face : road_cone_base1->faces) {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -441,7 +429,7 @@ int main()
       Point4(35.0f, 0.0f, 40.0f), .8f, true, Point4(35.0f, 2.0f, 40.0f),
       road_cone_color.color, road_cone_color.color, road_cone_color.spec);
 
-  auto road_cone_base2 = createMesh("cube.obj", "");
+  std::unique_ptr<ListMesh> road_cone_base2 = createMesh("cube.obj", "");
   road_cone_base2->applyTranslate(translate(
       Vector4(-road_cone_base2->centroid.x, -road_cone_base2->centroid.y,
               -road_cone_base2->centroid.z)));
@@ -449,8 +437,7 @@ int main()
   road_cone_base2->applyTranslate(
       translate(Vector4(35.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base2->faces)
-  {
+  for (auto &face : road_cone_base2->faces) {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -468,42 +455,48 @@ int main()
   road_cone_base3->applyTranslate(
       translate(Vector4(25.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base3->faces)
-  {
+  for (auto &face : road_cone_base3->faces) {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
   }
 #pragma endregion
 
-  std::unique_ptr<ListMesh> predio1 = createMesh("IndustrialBuilding.obj", "textures/industrial_building_front_lowres.png");
+  std::unique_ptr<ListMesh> predio1 =
+      createMesh("IndustrialBuilding.obj",
+                 "textures/industrial_building_front_lowres.png");
 
   predio1->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
 
-  std::unique_ptr<ListMesh> lateralPredio1 = createMesh("IndustrialBuilding.obj", "textures/industrial_building_front_lowres.png");
+  std::unique_ptr<ListMesh> lateralPredio1 =
+      createMesh("IndustrialBuilding.obj",
+                 "textures/industrial_building_front_lowres.png");
 
   lateralPredio1->applyScale(scale(Vector4(1.5f, 2.5f, 2.5f)));
-  lateralPredio1->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), 90.f * M_PI / 180.0f));
+  lateralPredio1->applyRotation(
+      rotate(Vector4(0.f, 1.f, 0.f), 90.f * M_PI / 180.0f));
   lateralPredio1->applyTranslate(translate(Vector4(10.f, 0.f, -5.f)));
-  std::unique_ptr<ListMesh> predio2 = createMesh("BrickBuilding.obj", "textures/brick_buillding_front_lowres.png");
+  std::unique_ptr<ListMesh> predio2 = createMesh(
+      "BrickBuilding.obj", "textures/brick_buillding_front_lowres.png");
 
   predio2->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
   predio2->applyTranslate(translate(Vector4(-20.f, 0.f, 0.f)));
 
 #pragma region trashes
 
-  std::unique_ptr<ListMesh> trash1 = createMesh("trash-can.obj","textures/trash-can.png");
-  trash1->applyScale(scale(Vector4(2.f,2.f,2.f)));
-  trash1->applyRotation(rotate(Vector4(0.f,1.f,0.f),90.f * M_PI / 180.0f));
-  trash1->applyTranslate(translate(Vector4(17.f,0.f,5.f)));
+  std::unique_ptr<ListMesh> trash1 =
+      createMesh("trash-can.obj", "textures/trash-can.png");
+  trash1->applyScale(scale(Vector4(2.f, 2.f, 2.f)));
+  trash1->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), 90.f * M_PI / 180.0f));
+  trash1->applyTranslate(translate(Vector4(17.f, 0.f, 5.f)));
   world.push_back(std::move(trash1));
 
-  std::unique_ptr<ListMesh> trash2 = createMesh("trash-can.obj","textures/trash-can.png");
-  trash2->applyScale(scale(Vector4(2.f,2.f,2.f)));
-  trash2->applyRotation(rotate(Vector4(0.f,1.f,0.f),-90.f * M_PI / 180.0f));
-  trash2->applyTranslate(translate(Vector4(-.5f,0.f,32.f)));
+  std::unique_ptr<ListMesh> trash2 =
+      createMesh("trash-can.obj", "textures/trash-can.png");
+  trash2->applyScale(scale(Vector4(2.f, 2.f, 2.f)));
+  trash2->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), -90.f * M_PI / 180.0f));
+  trash2->applyTranslate(translate(Vector4(-.5f, 0.f, 32.f)));
   world.push_back(std::move(trash2));
-
 
   world.push_back(std::move(car1));
   world.push_back(std::move(car2));
@@ -575,12 +568,10 @@ int main()
   InitWindow(screenWidth, screenHeight, "Raycasting CG - Raylib Ativado");
   // gladLoadGL();
   // glViewport(0,0,screenWidth,screenHeight);
-  for (const auto &obj : world)
-  {
+  for (const auto &obj : world) {
     // check if the object is a mesh
     ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
-    if (mesh && mesh->indices.size() > 1)
-    {
+    if (mesh && mesh->indices.size() > 1) {
       mesh->InitBuffers();
     }
   }
@@ -592,18 +583,15 @@ int main()
   bool useRasterization = false;
   SetTargetFPS(60);
 
-  while (!WindowShouldClose())
-  {
+  while (!WindowShouldClose()) {
     // rasterization toggle on/off
-    if (IsKeyPressed(KEY_SPACE))
-    {
+    if (IsKeyPressed(KEY_SPACE)) {
       useRasterization = !useRasterization;
       redraw = true;
     }
 
     // picking
-    if ( IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-    {
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
       float mouseX = GetMouseX();
       float mouseY = GetMouseY();
       float ndc_x, ndc_y;
@@ -612,12 +600,9 @@ int main()
                              ymax, nCol, nLin);
 
       Vector4 ray_dir;
-      if (projectionType == Projection::Perspective)
-      {
+      if (projectionType == Projection::Perspective) {
         ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-      }
-      else
-      {
+      } else {
         ray_dir = -w;
       }
       ray_dir.normalize();
@@ -626,59 +611,47 @@ int main()
       HitRecord rec;
       Object *hit_obj = nullptr;
 
-      for (const auto &obj : world)
-      {
+      for (const auto &obj : world) {
         HitRecord temp_rec;
-        if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec))
-        {
+        if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec)) {
           closest_t = temp_rec.t;
           hit_obj = obj.get();
         }
       }
 
-      if (hit_obj)
-      {
+      if (hit_obj) {
         selectedObject = hit_obj;
-      }
-      else
-      {
+      } else {
         selectedObject = nullptr;
       }
     }
 
     // moving selected object with arrow keys
-    if (selectedObject != nullptr)
-    {
+    if (selectedObject != nullptr) {
       float step = 1.0f;
       Vector4 moveVec(0, 0, 0, 0);
       bool movedObject = false;
 
-      if (IsKeyDown(KEY_UP))
-      {
+      if (IsKeyDown(KEY_UP)) {
         moveVec.z -= step;
         movedObject = true;
       }
-      if (IsKeyDown(KEY_DOWN))
-      {
+      if (IsKeyDown(KEY_DOWN)) {
         moveVec.z += step;
         movedObject = true;
       }
-      if (IsKeyDown(KEY_LEFT))
-      {
+      if (IsKeyDown(KEY_LEFT)) {
         moveVec.x -= step;
         movedObject = true;
       }
-      if (IsKeyDown(KEY_RIGHT))
-      {
+      if (IsKeyDown(KEY_RIGHT)) {
         moveVec.x += step;
         movedObject = true;
       }
 
-      if (movedObject)
-      {
+      if (movedObject) {
         ListMesh *mesh = dynamic_cast<ListMesh *>(selectedObject);
-        if (mesh)
-        {
+        if (mesh) {
           mesh->applyTranslate(translate(moveVec));
           redraw = true;
         }
@@ -686,52 +659,43 @@ int main()
     }
 
     // camera control
-    if (IsKeyPressed(KEY_ONE))
-    {
+    if (IsKeyPressed(KEY_ONE)) {
       projectionType = Projection::Perspective;
       redraw = true;
     }
-    if (IsKeyPressed(KEY_TWO))
-    {
+    if (IsKeyPressed(KEY_TWO)) {
       projectionType = Projection::Ortographic;
       redraw = true;
     }
-    if (IsKeyPressed(KEY_THREE))
-    {
+    if (IsKeyPressed(KEY_THREE)) {
       projectionType = Projection::Oblique;
       redraw = true;
     }
 
-    if (IsKeyDown(KEY_W))
-    {
+    if (IsKeyDown(KEY_W)) {
       lookFrom.z -= 1.0f;
       redraw = true;
     }
-    if (IsKeyDown(KEY_S))
-    {
+    if (IsKeyDown(KEY_S)) {
       lookFrom.z += 1.0f;
       redraw = true;
     }
-    if (IsKeyDown(KEY_A))
-    {
+    if (IsKeyDown(KEY_A)) {
       lookFrom.x -= 1.0f;
       redraw = true;
     }
-    if (IsKeyDown(KEY_D))
-    {
+    if (IsKeyDown(KEY_D)) {
       lookFrom.x += 1.0f;
       redraw = true;
     }
 
     // focal distance control
-    if (IsKeyDown(KEY_E))
-    {
+    if (IsKeyDown(KEY_E)) {
       dWindow += 0.2f;
       fov_atual = calculate_FOV_from_dWindow(dWindow, wWindow);
       redraw = true;
     }
-    if (IsKeyDown(KEY_Q))
-    {
+    if (IsKeyDown(KEY_Q)) {
       dWindow -= 0.2f;
       if (dWindow < 0.1f)
         dWindow = 0.1f;
@@ -740,16 +704,14 @@ int main()
     }
 
     // fov adjust
-    if (IsKeyDown(KEY_X))
-    { // zoom out
+    if (IsKeyDown(KEY_X)) { // zoom out
       fov_atual += 1.0f;
       if (fov_atual > 160.0f)
         fov_atual = 160.0f;
       dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
       redraw = true;
     }
-    if (IsKeyDown(KEY_Z))
-    { // zoom in
+    if (IsKeyDown(KEY_Z)) { // zoom in
       fov_atual -= 1.0f;
       if (fov_atual < 10.0f)
         fov_atual = 10.0f;
@@ -764,15 +726,12 @@ int main()
     u.normalize();
     v_cam = cross(w, u);
 
-    if (!useRasterization && redraw)
-    {
+    if (!useRasterization && redraw) {
       float oblique_scale = 0.5f;
       float oblique_angle_rad = 0.0f;
 
-      for (int y = 0; y < nLin; y++)
-      {
-        for (int x = 0; x < nCol; x++)
-        {
+      for (int y = 0; y < nLin; y++) {
+        for (int x = 0; x < nCol; x++) {
           float ndc_x, ndc_y;
           convertDisplayToWindow(x, y, ndc_x, ndc_y, xmin, xmax, ymin, ymax,
                                  nCol, nLin);
@@ -780,18 +739,13 @@ int main()
           Point4 ray_origin;
           Vector4 ray_dir;
 
-          if (projectionType == Projection::Perspective)
-          {
+          if (projectionType == Projection::Perspective) {
             ray_origin = lookFrom;
             ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-          }
-          else if (projectionType == Projection::Ortographic)
-          {
+          } else if (projectionType == Projection::Ortographic) {
             ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
             ray_dir = -w;
-          }
-          else
-          {
+          } else {
             ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
             float s_x = oblique_scale * std::cos(oblique_angle_rad);
             float s_y = oblique_scale * std::sin(oblique_angle_rad);
@@ -802,13 +756,10 @@ int main()
           Point3 color =
               cast_ray(ray_origin, ray_dir, 2, world, lights, amb_light);
 
-          if (edge_detection)
-          {
+          if (edge_detection) {
             // nCol -> image width
             pixels[y * nCol + x] = color;
-          }
-          else
-          {
+          } else {
             ::Color rlColor = {
                 (unsigned char)(std::clamp(color.x, 0.0f, 1.0f) * 255),
                 (unsigned char)(std::clamp(color.y, 0.0f, 1.0f) * 255),
@@ -818,34 +769,47 @@ int main()
           }
         }
       }
-      if (edge_detection)
-      {
-        for (int y = 0; y < nLin; y++)
-        {
-          for (int x = 0; x < nCol; x++)
-          {
-            Point3 right_point = x + 1 < nCol ? pixels[y * nCol + (x + 1)] : Point3(0.0f, 0.0f, 0.0f);
-            float right_px = x + 1 < nCol ? right_point.x * 0.299f + right_point.y * 0.587f + right_point.z * 0.114f : 0.0f;
+      if (edge_detection) {
+        for (int y = 0; y < nLin; y++) {
+          for (int x = 0; x < nCol; x++) {
+            Point3 right_point = x + 1 < nCol ? pixels[y * nCol + (x + 1)]
+                                              : Point3(0.0f, 0.0f, 0.0f);
+            float right_px = x + 1 < nCol ? right_point.x * 0.299f +
+                                                right_point.y * 0.587f +
+                                                right_point.z * 0.114f
+                                          : 0.0f;
 
-            Point3 left_point = x - 1 >= 0 ? pixels[y * nCol + (x - 1)] : Point3(0.0f, 0.0f, 0.0f);
-            float left_px = x - 1 >= 0 ? left_point.x * 0.299f + left_point.y * 0.587f + left_point.z * 0.114f : 0.0f;
+            Point3 left_point = x - 1 >= 0 ? pixels[y * nCol + (x - 1)]
+                                           : Point3(0.0f, 0.0f, 0.0f);
+            float left_px = x - 1 >= 0 ? left_point.x * 0.299f +
+                                             left_point.y * 0.587f +
+                                             left_point.z * 0.114f
+                                       : 0.0f;
 
             float gradient_x = (right_px - left_px) / 2.0f;
 
-            Point3 down_point = y + 1 < nLin ? pixels[(y + 1) * nCol + x] : Point3(0.0f, 0.0f, 0.0f);
-            float down_px = y + 1 < nLin ? down_point.x * 0.299f + down_point.y * 0.587f + down_point.z * 0.114f : 0.0f;
+            Point3 down_point = y + 1 < nLin ? pixels[(y + 1) * nCol + x]
+                                             : Point3(0.0f, 0.0f, 0.0f);
+            float down_px = y + 1 < nLin ? down_point.x * 0.299f +
+                                               down_point.y * 0.587f +
+                                               down_point.z * 0.114f
+                                         : 0.0f;
 
-            Point3 up_point = y - 1 >= 0 ? pixels[(y - 1) * nCol + x] : Point3(0.0f, 0.0f, 0.0f);
-            float up_px = y - 1 >= 0 ? up_point.x * 0.299f + up_point.y * 0.587f + up_point.z * 0.114f : 0.0f;
+            Point3 up_point = y - 1 >= 0 ? pixels[(y - 1) * nCol + x]
+                                         : Point3(0.0f, 0.0f, 0.0f);
+            float up_px = y - 1 >= 0
+                              ? up_point.x * 0.299f + up_point.y * 0.587f +
+                                    up_point.z * 0.114f
+                              : 0.0f;
 
             float gradient_y = (down_px - up_px) / 2.0f;
 
-            int grayscale = (int)(255.0f * sqrt(gradient_x * gradient_x + gradient_y * gradient_y));
+            int grayscale = (int)(255.0f * sqrt(gradient_x * gradient_x +
+                                                gradient_y * gradient_y));
 
-            ::Color rlColor = {
-                (unsigned char)grayscale,
-                (unsigned char)grayscale,
-                (unsigned char)grayscale, 255};
+            ::Color rlColor = {(unsigned char)grayscale,
+                               (unsigned char)grayscale,
+                               (unsigned char)grayscale, 255};
 
             ImageDrawPixel(&rayImage, x, y, rlColor);
           }
@@ -855,20 +819,20 @@ int main()
       redraw = false;
     }
 
-    if (useRasterization)
-    {
+    if (useRasterization) {
       ClearBackground(GetColor(0x031c47));
 
       Point4 centroidCreto = ptr_creto->centroid;
-      ptr_creto->applyTranslate(translate(Vector4(-centroidCreto.x, -centroidCreto.y, -centroidCreto.z)));
-      ptr_creto->applyRotation(rotate(Vector4(0.0f, 1.0f, 0.0f), .5f * M_PI / 180.0f));
-      ptr_creto->applyTranslate(translate(Vector4(centroidCreto.x, centroidCreto.y, centroidCreto.z)));
-      for (const auto &obj : world)
-      {
+      ptr_creto->applyTranslate(translate(
+          Vector4(-centroidCreto.x, -centroidCreto.y, -centroidCreto.z)));
+      ptr_creto->applyRotation(
+          rotate(Vector4(0.0f, 1.0f, 0.0f), .5f * M_PI / 180.0f));
+      ptr_creto->applyTranslate(translate(
+          Vector4(centroidCreto.x, centroidCreto.y, centroidCreto.z)));
+      for (const auto &obj : world) {
         // check if the object is a mesh
         ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
-        if (mesh)
-        {
+        if (mesh) {
 
           glm::vec3 glmPos = glm::vec3(lookFrom.x, lookFrom.y, lookFrom.z);
 
@@ -880,15 +844,10 @@ int main()
 
           mesh->UpdateBuffers();
           mesh->Draw(view, fov_atual);
-         
-
-          
         }
       }
-     
-    }
-    else
-    {
+
+    } else {
       ClearBackground(BLACK);
       DrawTexture(tex, 0, 0, WHITE);
     }
@@ -896,19 +855,20 @@ int main()
     // ui
     DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
 
-    if (useRasterization)
-    {
-      DrawText("MOTOR: RASTERIZACAO (GPU) - Aperte ESPACO para Raycasting", 10, nLin - 80, 20, GREEN);
-    }
-    else
-    {
-      DrawText("MOTOR: RAYCASTING (CPU) - Aperte ESPACO para OpenGL", 10, nLin - 80, 20, RED);
+    if (useRasterization) {
+      DrawText("MOTOR: RASTERIZACAO (GPU) - Aperte ESPACO para Raycasting", 10,
+               nLin - 80, 20, GREEN);
+    } else {
+      DrawText("MOTOR: RAYCASTING (CPU) - Aperte ESPACO para OpenGL", 10,
+               nLin - 80, 20, RED);
     }
 
-    DrawText("1-3: Proj | W/A/S/D: Cam | Setas: Mover", 10, nLin - 55, 20, RAYWHITE);
+    DrawText("1-3: Proj | W/A/S/D: Cam | Setas: Mover", 10, nLin - 55, 20,
+             RAYWHITE);
 
-    std::string text_focal = "Focal (Q/E): " + std::to_string(dWindow).substr(0, 4) +
-                             "  |  FOV (Z/X): " + std::to_string((int)fov_atual) + " graus";
+    std::string text_focal =
+        "Focal (Q/E): " + std::to_string(dWindow).substr(0, 4) +
+        "  |  FOV (Z/X): " + std::to_string((int)fov_atual) + " graus";
     DrawText(text_focal.c_str(), 10, nLin - 30, 20, YELLOW);
 
     DrawFPS(10, 10);

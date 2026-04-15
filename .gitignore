@@ -4,3 +4,4 @@ build/CMakeCache.txt
 build/Makefile
 .vscode
 build/*.cmake
+.cache
