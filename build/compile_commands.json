@@ -1,85 +1,85 @@
 [
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/main.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/main.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/main.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/main.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/main.cpp",
   "output": "CMakeFiles/main.dir/src/main.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/aux_functions.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/aux_functions.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/aux_functions.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/aux_functions.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/aux_functions.cpp",
   "output": "CMakeFiles/main.dir/src/aux_functions.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/ListMesh.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/ListMesh.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/ListMesh.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/ListMesh.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/ListMesh.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/ListMesh.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Triangle.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Triangle.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Triangle.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Triangle.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Triangle.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Triangle.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Matrix4.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Matrix4.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Matrix4.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Matrix4.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Matrix4.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Matrix4.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Vector4.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Vector4.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Vector4.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Vector4.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Vector4.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Vector4.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Plain.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Plain.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Plain.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Plain.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Plain.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Plain.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Sphere.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Sphere.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Sphere.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Sphere.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Sphere.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Sphere.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/AABB.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/AABB.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/AABB.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/AABB.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/AABB.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/AABB.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Texture.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Texture.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Texture.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Texture.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Texture.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Texture.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Cylinder.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Cylinder.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Cylinder.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Cylinder.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Cylinder.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Cylinder.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Rectangle.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Rectangle.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Rectangle.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Rectangle.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Rectangle.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Rectangle.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Cone.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Cone.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Cone.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Cone.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Cone.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Cone.cpp.o"
 },
 {
   "directory": "/home/luis/Programming/raycasting-cg-1/build",
-  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -Ofast -g -o CMakeFiles/main.dir/src/implementations/Shader.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Shader.cpp",
+  "command": "/usr/bin/c++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/luis/Programming/raycasting-cg-1/utils -O3 -DNDEBUG -O3 -g -o CMakeFiles/main.dir/src/implementations/Shader.cpp.o -c /home/luis/Programming/raycasting-cg-1/src/implementations/Shader.cpp",
   "file": "/home/luis/Programming/raycasting-cg-1/src/implementations/Shader.cpp",
   "output": "CMakeFiles/main.dir/src/implementations/Shader.cpp.o"
 }

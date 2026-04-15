@@ -8,7 +8,7 @@ project(main)
 find_package(raylib REQUIRED)
 find_package(glm REQUIRED)
 # Opções de otimização (mantendo as suas)
-add_compile_options(-Ofast)
+add_compile_options(-O3)
 add_compile_options(-g)
 
 # --- 2. DEFINIR O EXECUTÁVEL ---
@@ -29,6 +29,7 @@ add_executable(main
         src/implementations/Cone.cpp
         src/implementations/Shader.cpp
         )
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # --- 3. DIRETÓRIOS DE INCLUDE ---
 # Adiciona sua pasta utils e os cabeçalhos da raylib
