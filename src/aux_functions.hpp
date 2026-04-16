@@ -31,7 +31,7 @@ Vector4 reflect_ray(const Vector4& v, const Vector4& n);
 
 void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& ndc_y, float xmin, float xmax, float ymin, float ymax, int nCol, int nLin);
 
-Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights, Point3 amb_light, std::vector<std::unique_ptr<Object>> &world);
+Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> &lights, Point3 amb_light, std::vector<std::unique_ptr<Object>> &world);
 
 Point3 cast_ray(const Point4& ray_origin, const Vector4& ray_dir, int depth, 
                 std::vector<std::unique_ptr<Object>> &world, 

@@ -29,7 +29,7 @@ Vector4 reflect_ray(const Vector4& v, const Vector4& n) {
 Vector4 noise_reflect_ray(const Vector4& v, const Vector4& n) {
   Vector4 vr;
     vr = v - n * 2.0f * dot(v, n);
-    vr.x += random_float2() / 20;
+   // vr.x += random_float2() / 20;
     return vr;
 }
 Point3 getStarryBackground(const Vector4& dir) {
@@ -103,7 +103,7 @@ void convertDisplayToWindow(int display_x, int display_y, float &ndc_x, float& n
     ndc_y = ymax - local_dy/2.0f - (display_y * local_dy);
 }
 
-Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> lights, Point3 amb_light, std::vector<std::unique_ptr<Object>> &world){
+Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> &lights, Point3 amb_light, std::vector<std::unique_ptr<Object>> &world){
   Point3 obj_color = rec.obj_ptr->getColor();
 
   if(rec.texture != nullptr && !rec.texture->colors.empty()) {

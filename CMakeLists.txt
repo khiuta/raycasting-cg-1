@@ -8,8 +8,9 @@ project(main)
 find_package(raylib REQUIRED)
 find_package(glm REQUIRED)
 # Opções de otimização (mantendo as suas)
-add_compile_options(-O3)
-add_compile_options(-g)
+add_compile_options(-Ofast)
+set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+find_package(OpenMP REQUIRED)
 
 # --- 2. DEFINIR O EXECUTÁVEL ---
 # Listando seus arquivos de implementação conforme seu projeto

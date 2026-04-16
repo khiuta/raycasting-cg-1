@@ -11,6 +11,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <omp.h>
+
 // #include "../utils/glad.h"
 #define Vector3 RL_Vector3
 #define Vector4 RL_Vector4
@@ -20,6 +22,9 @@
 #define Material RL_Material
 
 #include <raylib.h>
+#define RAYGUI_IMPLEMENTATION
+
+#include "../utils/raygui.h"
 #include <rlgl.h> // use opengl primitive matrices
 
 #undef Vector3
@@ -62,11 +67,11 @@ float ymin = -1.5f, ymax = 1.5f;
 
 Projection projectionType = Projection::Perspective;
 
-struct Material {
+struct Material
+{
   Point3 color;
   Point3 spec;
 };
-
 Object *selectedObject = nullptr;
 
 std::vector<Light> lights;
@@ -79,11 +84,13 @@ Point4 lookAt(30.f, 5.0f, 30.0f);
 // Point4 lookAt(0.f, 5.0f, 70.0f);
 Vector4 vUp(0.0f, 1.0f, 0.0f, 0.0f);
 Vector4 u, v_cam, w;
+float cameraSensitivity = 1.5f;
 
 std::vector<std::unique_ptr<Object>> world;
 
 std::unique_ptr<ListMesh> createMesh(const std::string &objPath,
-                                     const std::string &texturePath) {
+                                     const std::string &texturePath)
+{
   std::vector<std::unique_ptr<Point4>> v;
   std::vector<std::unique_ptr<Vector4>> vn;
   std::vector<std::unique_ptr<Point3>> vt;
@@ -99,17 +106,20 @@ std::unique_ptr<ListMesh> createMesh(const std::string &objPath,
   return mesh;
 }
 
-float calculate_dWindow_from_FOV(float fov_degrees, float wWindow) {
+float calculate_dWindow_from_FOV(float fov_degrees, float wWindow)
+{
   float fov_radians = fov_degrees * M_PI / 180.0f;
   return (wWindow / 2.0f) / std::tan(fov_radians / 2.0f);
 }
 
-float calculate_FOV_from_dWindow(float dWindow, float wWindow) {
+float calculate_FOV_from_dWindow(float dWindow, float wWindow)
+{
   float fov_radians = 2.0f * std::atan((wWindow / 2.0f) / dWindow);
   return fov_radians * 180.0f / M_PI;
 }
 
-int main() {
+int main()
+{
   std::string obj_name = "car_1.obj";
 
   Point3 spec = Point3(0.5f, 0.5f, 0.5f);
@@ -217,7 +227,8 @@ int main() {
   cube->applyScale(scale(Vector4(25.0f, 8.0f, 10.0f)));
   float half_cube_height = (cube->aabb.max_y - cube->aabb.min_y) / 2.0f;
   cube->applyTranslate(translate(Vector4(0.0f, half_cube_height, -25.0f)));
-  for (auto &face : cube->faces) {
+  for (auto &face : cube->faces)
+  {
     face->reflectivity = 1.0f;
   }
 
@@ -307,7 +318,8 @@ int main() {
   road_strip1->applyTranslate(
       translate(Vector4(30.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip1->faces) {
+  for (auto &face : road_strip1->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -320,7 +332,8 @@ int main() {
   road_strip2->applyTranslate(
       translate(Vector4(42.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip2->faces) {
+  for (auto &face : road_strip2->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -333,7 +346,8 @@ int main() {
   road_strip3->applyTranslate(
       translate(Vector4(54.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip3->faces) {
+  for (auto &face : road_strip3->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -346,7 +360,8 @@ int main() {
   road_strip4->applyTranslate(
       translate(Vector4(66.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip4->faces) {
+  for (auto &face : road_strip4->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -359,7 +374,8 @@ int main() {
   road_strip5->applyTranslate(
       translate(Vector4(18.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip5->faces) {
+  for (auto &face : road_strip5->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -372,7 +388,8 @@ int main() {
   road_strip6->applyTranslate(
       translate(Vector4(6.0f, half_road_height + 0.01f, 50.0f)));
 
-  for (auto &face : road_strip6->faces) {
+  for (auto &face : road_strip6->faces)
+  {
     face->color = Point3(1.0f, 1.0f, 1.0f);
     face->dif_color = Point3(1.0f, 1.0f, 1.0f);
   }
@@ -419,7 +436,8 @@ int main() {
   road_cone_base1->applyTranslate(
       translate(Vector4(30.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base1->faces) {
+  for (auto &face : road_cone_base1->faces)
+  {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -437,7 +455,8 @@ int main() {
   road_cone_base2->applyTranslate(
       translate(Vector4(35.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base2->faces) {
+  for (auto &face : road_cone_base2->faces)
+  {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -455,7 +474,8 @@ int main() {
   road_cone_base3->applyTranslate(
       translate(Vector4(25.0f, half_base_height, 40.0f)));
 
-  for (auto &face : road_cone_base3->faces) {
+  for (auto &face : road_cone_base3->faces)
+  {
     face->color = road_cone_color.color;
     face->dif_color = road_cone_color.color;
     face->spec_color = road_cone_color.spec;
@@ -568,10 +588,12 @@ int main() {
   InitWindow(screenWidth, screenHeight, "Raycasting CG - Raylib Ativado");
   // gladLoadGL();
   // glViewport(0,0,screenWidth,screenHeight);
-  for (const auto &obj : world) {
+  for (const auto &obj : world)
+  {
     // check if the object is a mesh
     ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
-    if (mesh && mesh->indices.size() > 1) {
+    if (mesh && mesh->indices.size() > 1)
+    {
       mesh->InitBuffers();
     }
   }
@@ -583,15 +605,18 @@ int main() {
   bool useRasterization = false;
   SetTargetFPS(60);
 
-  while (!WindowShouldClose()) {
+  while (!WindowShouldClose())
+  {
     // rasterization toggle on/off
-    if (IsKeyPressed(KEY_SPACE)) {
+    if (IsKeyPressed(KEY_SPACE))
+    {
       useRasterization = !useRasterization;
       redraw = true;
     }
 
     // picking
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
       float mouseX = GetMouseX();
       float mouseY = GetMouseY();
       float ndc_x, ndc_y;
@@ -600,9 +625,12 @@ int main() {
                              ymax, nCol, nLin);
 
       Vector4 ray_dir;
-      if (projectionType == Projection::Perspective) {
+      if (projectionType == Projection::Perspective)
+      {
         ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-      } else {
+      }
+      else
+      {
         ray_dir = -w;
       }
       ray_dir.normalize();
@@ -611,47 +639,59 @@ int main() {
       HitRecord rec;
       Object *hit_obj = nullptr;
 
-      for (const auto &obj : world) {
+      for (const auto &obj : world)
+      {
         HitRecord temp_rec;
-        if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec)) {
+        if (obj->Intersect(lookFrom, ray_dir, 0.001f, closest_t, temp_rec))
+        {
           closest_t = temp_rec.t;
           hit_obj = obj.get();
         }
       }
 
-      if (hit_obj) {
+      if (hit_obj)
+      {
         selectedObject = hit_obj;
-      } else {
+      }
+      else
+      {
         selectedObject = nullptr;
       }
     }
 
     // moving selected object with arrow keys
-    if (selectedObject != nullptr) {
+    if (selectedObject != nullptr)
+    {
       float step = 1.0f;
       Vector4 moveVec(0, 0, 0, 0);
       bool movedObject = false;
 
-      if (IsKeyDown(KEY_UP)) {
+      if (IsKeyDown(KEY_UP))
+      {
         moveVec.z -= step;
         movedObject = true;
       }
-      if (IsKeyDown(KEY_DOWN)) {
+      if (IsKeyDown(KEY_DOWN))
+      {
         moveVec.z += step;
         movedObject = true;
       }
-      if (IsKeyDown(KEY_LEFT)) {
+      if (IsKeyDown(KEY_LEFT))
+      {
         moveVec.x -= step;
         movedObject = true;
       }
-      if (IsKeyDown(KEY_RIGHT)) {
+      if (IsKeyDown(KEY_RIGHT))
+      {
         moveVec.x += step;
         movedObject = true;
       }
 
-      if (movedObject) {
+      if (movedObject)
+      {
         ListMesh *mesh = dynamic_cast<ListMesh *>(selectedObject);
-        if (mesh) {
+        if (mesh)
+        {
           mesh->applyTranslate(translate(moveVec));
           redraw = true;
         }
@@ -659,43 +699,65 @@ int main() {
     }
 
     // camera control
-    if (IsKeyPressed(KEY_ONE)) {
+    if (IsKeyPressed(KEY_ONE))
+    {
       projectionType = Projection::Perspective;
       redraw = true;
     }
-    if (IsKeyPressed(KEY_TWO)) {
+    if (IsKeyPressed(KEY_TWO))
+    {
       projectionType = Projection::Ortographic;
       redraw = true;
     }
-    if (IsKeyPressed(KEY_THREE)) {
+    if (IsKeyPressed(KEY_THREE))
+    {
       projectionType = Projection::Oblique;
       redraw = true;
     }
 
-    if (IsKeyDown(KEY_W)) {
+    if (IsKeyDown(KEY_W))
+    {
       lookFrom.z -= 1.0f;
       redraw = true;
     }
-    if (IsKeyDown(KEY_S)) {
+    if (IsKeyDown(KEY_S))
+    {
       lookFrom.z += 1.0f;
       redraw = true;
     }
-    if (IsKeyDown(KEY_A)) {
+    if (IsKeyDown(KEY_A))
+    {
       lookFrom.x -= 1.0f;
       redraw = true;
     }
-    if (IsKeyDown(KEY_D)) {
+    if (IsKeyDown(KEY_D))
+    {
       lookFrom.x += 1.0f;
+      redraw = true;
+    }
+    
+
+
+    if (IsKeyDown(KEY_U))
+    {
+      vUp = rotate(w, cameraSensitivity * M_PI / 180.f) * vUp;
+      redraw = true;
+    }
+    if (IsKeyDown(KEY_I))
+    {
+      vUp = rotate(w, -cameraSensitivity * M_PI / 180.f) * vUp;
       redraw = true;
     }
 
     // focal distance control
-    if (IsKeyDown(KEY_E)) {
+    if (IsKeyDown(KEY_E))
+    {
       dWindow += 0.2f;
       fov_atual = calculate_FOV_from_dWindow(dWindow, wWindow);
       redraw = true;
     }
-    if (IsKeyDown(KEY_Q)) {
+    if (IsKeyDown(KEY_Q))
+    {
       dWindow -= 0.2f;
       if (dWindow < 0.1f)
         dWindow = 0.1f;
@@ -704,14 +766,16 @@ int main() {
     }
 
     // fov adjust
-    if (IsKeyDown(KEY_X)) { // zoom out
+    if (IsKeyDown(KEY_X))
+    { // zoom out
       fov_atual += 1.0f;
       if (fov_atual > 160.0f)
         fov_atual = 160.0f;
       dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
       redraw = true;
     }
-    if (IsKeyDown(KEY_Z)) { // zoom in
+    if (IsKeyDown(KEY_Z))
+    { // zoom in
       fov_atual -= 1.0f;
       if (fov_atual < 10.0f)
         fov_atual = 10.0f;
@@ -726,12 +790,16 @@ int main() {
     u.normalize();
     v_cam = cross(w, u);
 
-    if (!useRasterization && redraw) {
+    if (!useRasterization && redraw)
+    {
       float oblique_scale = 0.5f;
       float oblique_angle_rad = 0.0f;
-
-      for (int y = 0; y < nLin; y++) {
-        for (int x = 0; x < nCol; x++) {
+      ::Color* imgBuffer = static_cast<::Color*>(rayImage.data);
+#pragma omp parallel for schedule(dynamic)
+      for (int y = 0; y < nLin; y++)
+      {
+        for (int x = 0; x < nCol; x++)
+        {
           float ndc_x, ndc_y;
           convertDisplayToWindow(x, y, ndc_x, ndc_y, xmin, xmax, ymin, ymax,
                                  nCol, nLin);
@@ -739,13 +807,18 @@ int main() {
           Point4 ray_origin;
           Vector4 ray_dir;
 
-          if (projectionType == Projection::Perspective) {
+          if (projectionType == Projection::Perspective)
+          {
             ray_origin = lookFrom;
             ray_dir = (u * ndc_x) + (v_cam * ndc_y) - (w * dWindow);
-          } else if (projectionType == Projection::Ortographic) {
+          }
+          else if (projectionType == Projection::Ortographic)
+          {
             ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
             ray_dir = -w;
-          } else {
+          }
+          else
+          {
             ray_origin = lookFrom + (u * ndc_x) + (v_cam * ndc_y);
             float s_x = oblique_scale * std::cos(oblique_angle_rad);
             float s_y = oblique_scale * std::sin(oblique_angle_rad);
@@ -756,22 +829,30 @@ int main() {
           Point3 color =
               cast_ray(ray_origin, ray_dir, 2, world, lights, amb_light);
 
-          if (edge_detection) {
+          if (edge_detection)
+          {
             // nCol -> image width
             pixels[y * nCol + x] = color;
-          } else {
+          }
+          else
+          {
             ::Color rlColor = {
                 (unsigned char)(std::clamp(color.x, 0.0f, 1.0f) * 255),
                 (unsigned char)(std::clamp(color.y, 0.0f, 1.0f) * 255),
                 (unsigned char)(std::clamp(color.z, 0.0f, 1.0f) * 255), 255};
 
-            ImageDrawPixel(&rayImage, x, y, rlColor);
+            imgBuffer[y * nCol + x] = rlColor;
           }
         }
       }
-      if (edge_detection) {
-        for (int y = 0; y < nLin; y++) {
-          for (int x = 0; x < nCol; x++) {
+      
+      if (edge_detection)
+      {
+        #pragma omp parallel for schedule(dynamic)
+        for (int y = 0; y < nLin; y++)
+        {
+          for (int x = 0; x < nCol; x++)
+          {
             Point3 right_point = x + 1 < nCol ? pixels[y * nCol + (x + 1)]
                                               : Point3(0.0f, 0.0f, 0.0f);
             float right_px = x + 1 < nCol ? right_point.x * 0.299f +
@@ -811,7 +892,7 @@ int main() {
                                (unsigned char)grayscale,
                                (unsigned char)grayscale, 255};
 
-            ImageDrawPixel(&rayImage, x, y, rlColor);
+            imgBuffer[y * nCol + x] = rlColor;
           }
         }
       }
@@ -819,7 +900,8 @@ int main() {
       redraw = false;
     }
 
-    if (useRasterization) {
+    if (useRasterization)
+    {
       ClearBackground(GetColor(0x031c47));
 
       Point4 centroidCreto = ptr_creto->centroid;
@@ -829,10 +911,12 @@ int main() {
           rotate(Vector4(0.0f, 1.0f, 0.0f), .5f * M_PI / 180.0f));
       ptr_creto->applyTranslate(translate(
           Vector4(centroidCreto.x, centroidCreto.y, centroidCreto.z)));
-      for (const auto &obj : world) {
+      for (const auto &obj : world)
+      {
         // check if the object is a mesh
         ListMesh *mesh = dynamic_cast<ListMesh *>(obj.get());
-        if (mesh) {
+        if (mesh)
+        {
 
           glm::vec3 glmPos = glm::vec3(lookFrom.x, lookFrom.y, lookFrom.z);
 
@@ -846,8 +930,9 @@ int main() {
           mesh->Draw(view, fov_atual);
         }
       }
-
-    } else {
+    }
+    else
+    {
       ClearBackground(BLACK);
       DrawTexture(tex, 0, 0, WHITE);
     }
@@ -855,10 +940,15 @@ int main() {
     // ui
     DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
 
-    if (useRasterization) {
+    GuiSlider((RL_Rectangle){ 700, 50, 80, 20 }, "0.1", "3", &cameraSensitivity, 0.1f, 3.f);
+
+    if (useRasterization)
+    {
       DrawText("MOTOR: RASTERIZACAO (GPU) - Aperte ESPACO para Raycasting", 10,
                nLin - 80, 20, GREEN);
-    } else {
+    }
+    else
+    {
       DrawText("MOTOR: RAYCASTING (CPU) - Aperte ESPACO para OpenGL", 10,
                nLin - 80, 20, RED);
     }
