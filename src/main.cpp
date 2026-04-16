@@ -233,7 +233,7 @@ int main()
   }
 
   std::unique_ptr<ListMesh> taxi = createMesh("Taxi.obj", "textures/Taxi 256x256.png");
-  taxi->applyScale(scale(Vector4(3.8f, 3.8f, 3.8f)));
+  taxi->applyScale(scale(Vector4(4.f, 4.f, 4.f)));
   taxi->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), 90.0f * M_PI / 180.0f));
   taxi->applyTranslate(translate(Vector4(25.f, 0.f, 55.f)));
 
