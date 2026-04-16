@@ -176,6 +176,16 @@ int main()
   farol2_carro2.cutoff = std::cos(8.f * M_PI / 180.0f);
   farol2_carro2.outer_cutoff = std::cos(20.f * M_PI / 180.0f);
 
+
+  Light luzCoreto;
+  luzCoreto.type = LightType::SPOTLIGHT;
+  luzCoreto.color = Point3(1.0f, 0.9f, 0.0f);
+  luzCoreto.position = Point4(20.0f, 9.f, 70.0f);
+  luzCoreto.direction = Vector4(0.0f, -1.0f, 0.0f);
+  luzCoreto.cutoff = std::cos(40.0f * M_PI / 180.0f);
+  luzCoreto.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
+
+  lights.push_back(luzCoreto);
   lights.push_back(directional);
   lights.push_back(post_spot);
   lights.push_back(post_spot2);
@@ -290,7 +300,7 @@ int main()
       Vector4(-tree->centroid.x, -tree->centroid.y, -tree->centroid.z)));
   tree->applyScale(scale(Vector4(4.0f, 4.0f, 4.0f)));
   float tree_half_height = (tree->aabb.max_y - tree->aabb.min_y) / 2.0f;
-  tree->applyTranslate(translate(Vector4(10.0f, 5.0f, 40.0f)));
+  tree->applyTranslate(translate(Vector4(10.0f, 7.0f, 40.0f)));
   world.push_back(std::move(tree));
 
   std::unique_ptr<ListMesh> bush = createMesh("bush01.obj", "textures/bush1_spring.png");
@@ -517,6 +527,53 @@ int main()
   trash2->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), -90.f * M_PI / 180.0f));
   trash2->applyTranslate(translate(Vector4(-.5f, 0.f, 32.f)));
   world.push_back(std::move(trash2));
+
+#pragma region pracinha
+  Material telhadoCoretoMat;
+  telhadoCoretoMat.color = Point3(0.588f, 0.192f, 0);
+  telhadoCoretoMat.spec = Point3(.1,.1f,.1f);
+
+  Material coretoBaseMat;
+  coretoBaseMat.color = Point3(0.98f, 0.816f, 0.737f);
+  coretoBaseMat.spec = Point3(.1f,.1f,.1f);
+  float raioCoreto = 5.f;
+  float raioPilares = .5f;
+  Point4 centroCoreto(20.0f, 0.0f, 70.0f);
+  float raioPontoPilares = raioCoreto - raioPilares;
+  std::unique_ptr<Cone> telhadoCoreto = std::make_unique<Cone>(
+      Point4(20.0f, 10.0f, 70.0f), raioCoreto+2.f, true, Point4(20.0f, 12.0f, 70.0f),
+      telhadoCoretoMat.color, telhadoCoretoMat.color, telhadoCoretoMat.spec);
+  
+    std::unique_ptr<Cylinder> coretoBse = std::make_unique<Cylinder>(
+      centroCoreto, 2.0f, raioCoreto, Vector4(0.0f, 1.0f, 0.0f), true,
+      true, coretoBaseMat.color, coretoBaseMat.color, coretoBaseMat.spec);
+
+  //Adicionar pilares dinamicamente
+
+  int qtdPilares = 8;
+  float anguloPasso = 360.f / qtdPilares;
+  
+  for (int i = 0; i < qtdPilares; i++)
+  {
+    
+    float anguloRad = anguloPasso * i * M_PI / 180.f;
+
+    float px = centroCoreto.x + raioPontoPilares * std::sin(anguloRad);
+    float pz = centroCoreto.z + raioPontoPilares * std::cos(anguloRad);
+
+  
+    Point4 pontoPilarP4(px, centroCoreto.y, pz);
+
+    std::unique_ptr<Cylinder> pilar = std::make_unique<Cylinder>(
+      pontoPilarP4, 10.0f, raioPilares, Vector4(0.0f, 1.0f, 0.0f), true,
+      true, coretoBaseMat.color, coretoBaseMat.color, coretoBaseMat.spec);
+
+    world.push_back(std::move(pilar));
+  }
+  
+    
+  world.push_back(std::move(telhadoCoreto));
+  world.push_back(std::move(coretoBse));
 
   world.push_back(std::move(car1));
   world.push_back(std::move(car2));
