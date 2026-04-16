@@ -176,7 +176,6 @@ int main()
   farol2_carro2.cutoff = std::cos(8.f * M_PI / 180.0f);
   farol2_carro2.outer_cutoff = std::cos(20.f * M_PI / 180.0f);
 
-
   Light luzCoreto;
   luzCoreto.type = LightType::SPOTLIGHT;
   luzCoreto.color = Point3(1.0f, 0.9f, 0.0f);
@@ -531,47 +530,45 @@ int main()
 #pragma region pracinha
   Material telhadoCoretoMat;
   telhadoCoretoMat.color = Point3(0.588f, 0.192f, 0);
-  telhadoCoretoMat.spec = Point3(.1,.1f,.1f);
+  telhadoCoretoMat.spec = Point3(.1, .1f, .1f);
 
   Material coretoBaseMat;
   coretoBaseMat.color = Point3(0.98f, 0.816f, 0.737f);
-  coretoBaseMat.spec = Point3(.1f,.1f,.1f);
+  coretoBaseMat.spec = Point3(.1f, .1f, .1f);
   float raioCoreto = 5.f;
   float raioPilares = .5f;
   Point4 centroCoreto(20.0f, 0.0f, 70.0f);
   float raioPontoPilares = raioCoreto - raioPilares;
   std::unique_ptr<Cone> telhadoCoreto = std::make_unique<Cone>(
-      Point4(20.0f, 10.0f, 70.0f), raioCoreto+2.f, true, Point4(20.0f, 12.0f, 70.0f),
+      Point4(20.0f, 10.0f, 70.0f), raioCoreto + 2.f, true, Point4(20.0f, 12.0f, 70.0f),
       telhadoCoretoMat.color, telhadoCoretoMat.color, telhadoCoretoMat.spec);
-  
-    std::unique_ptr<Cylinder> coretoBse = std::make_unique<Cylinder>(
+
+  std::unique_ptr<Cylinder> coretoBse = std::make_unique<Cylinder>(
       centroCoreto, 2.0f, raioCoreto, Vector4(0.0f, 1.0f, 0.0f), true,
       true, coretoBaseMat.color, coretoBaseMat.color, coretoBaseMat.spec);
 
-  //Adicionar pilares dinamicamente
+  // Adicionar pilares dinamicamente
 
   int qtdPilares = 8;
   float anguloPasso = 360.f / qtdPilares;
-  
+
   for (int i = 0; i < qtdPilares; i++)
   {
-    
+
     float anguloRad = anguloPasso * i * M_PI / 180.f;
 
     float px = centroCoreto.x + raioPontoPilares * std::sin(anguloRad);
     float pz = centroCoreto.z + raioPontoPilares * std::cos(anguloRad);
 
-  
     Point4 pontoPilarP4(px, centroCoreto.y, pz);
 
     std::unique_ptr<Cylinder> pilar = std::make_unique<Cylinder>(
-      pontoPilarP4, 10.0f, raioPilares, Vector4(0.0f, 1.0f, 0.0f), true,
-      true, coretoBaseMat.color, coretoBaseMat.color, coretoBaseMat.spec);
+        pontoPilarP4, 10.0f, raioPilares, Vector4(0.0f, 1.0f, 0.0f), true,
+        true, coretoBaseMat.color, coretoBaseMat.color, coretoBaseMat.spec);
 
     world.push_back(std::move(pilar));
   }
-  
-    
+
   world.push_back(std::move(telhadoCoreto));
   world.push_back(std::move(coretoBse));
 
@@ -752,6 +749,14 @@ int main()
           mesh->applyTranslate(translate(moveVec));
           redraw = true;
         }
+
+        Sphere *sphere = dynamic_cast<Sphere * > (selectedObject);
+        if (sphere)
+        {
+          Point4 center = sphere->center;
+          sphere->center = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
+          redraw = true;
+        }
       }
     }
 
@@ -792,8 +797,6 @@ int main()
       lookFrom.x += 1.0f;
       redraw = true;
     }
-    
-
 
     if (IsKeyDown(KEY_U))
     {
@@ -851,7 +854,7 @@ int main()
     {
       float oblique_scale = 0.5f;
       float oblique_angle_rad = 0.0f;
-      ::Color* imgBuffer = static_cast<::Color*>(rayImage.data);
+      ::Color *imgBuffer = static_cast<::Color *>(rayImage.data);
 #pragma omp parallel for schedule(dynamic)
       for (int y = 0; y < nLin; y++)
       {
@@ -902,10 +905,10 @@ int main()
           }
         }
       }
-      
+
       if (edge_detection)
       {
-        #pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
         for (int y = 0; y < nLin; y++)
         {
           for (int x = 0; x < nCol; x++)
@@ -997,7 +1000,7 @@ int main()
     // ui
     DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
 
-    GuiSlider((RL_Rectangle){ 700, 50, 80, 20 }, "0.1", "3", &cameraSensitivity, 0.1f, 3.f);
+    GuiSlider((RL_Rectangle){700, 50, 80, 20}, "0.1", "3", &cameraSensitivity, 0.1f, 3.f);
 
     if (useRasterization)
     {
