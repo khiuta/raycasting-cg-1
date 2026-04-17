@@ -621,7 +621,7 @@ int main()
       mirror_origin, mirror_width_pt, mirror_height_pt, mirror_color,
       mirror_color, mirror_spec, 1.0f);
 
-//  world.push_back(std::move(vitrine_espelhada));
+ //world.push_back(std::move(vitrine_espelhada));
 #pragma endregion
 
 #pragma endregion
@@ -755,6 +755,20 @@ int main()
         {
           Point4 center = sphere->center;
           sphere->center = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
+          redraw = true;
+        }
+        Cylinder *cylinder = dynamic_cast<Cylinder * > (selectedObject);
+        if (cylinder)
+        {
+          Point4 center = cylinder->baseCenter;
+          cylinder->baseCenter = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
+          redraw = true;
+        }
+        Cone * cone = dynamic_cast<Cone * > (selectedObject);
+        if (cone)
+        {
+          Point4 center = cone->center;
+          cone->center = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
           redraw = true;
         }
       }

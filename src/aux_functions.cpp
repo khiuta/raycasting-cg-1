@@ -29,7 +29,7 @@ Vector4 reflect_ray(const Vector4& v, const Vector4& n) {
 Vector4 noise_reflect_ray(const Vector4& v, const Vector4& n) {
   Vector4 vr;
     vr = v - n * 2.0f * dot(v, n);
-   vr.x += random_float2() / 20;
+  // vr.x += random_float2() / 20;
     return vr;
 }
 Point3 getStarryBackground(const Vector4& dir) {

@@ -49,6 +49,9 @@ target_link_libraries(main PRIVATE
     dl 
     rt
 )
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(main PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 # Configuração de build (Release por padrão)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
