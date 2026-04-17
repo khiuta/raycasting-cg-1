@@ -281,17 +281,23 @@ int main()
 
 #pragma region vegetation
 
-  std::unique_ptr<ListMesh> sidewalk = createMesh("floor.obj", "textures/floor_texture.png");
-  sidewalk->applyTranslate(translate(Vector4(
-      -sidewalk->centroid.x, -sidewalk->centroid.y, -sidewalk->centroid.z)));
-  sidewalk->applyScale(scale(Vector4(1.0f, 1.6f, 0.5f)));
-  sidewalk->applyRotation(
-      rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
-  sidewalk->applyTranslate(translate(Vector4(10.f, 0.2f, 0.f)));
+  // std::unique_ptr<ListMesh> sidewalk = createMesh("floor.obj", "textures/floor_texture.png");
+  // sidewalk->applyTranslate(translate(Vector4(
+  //     -sidewalk->centroid.x, -sidewalk->centroid.y, -sidewalk->centroid.z)));
+  // sidewalk->applyScale(scale(Vector4(1.0f, 1.6f, 0.5f)));
+  // sidewalk->applyRotation(
+  //     rotate(Vector4(1.0f, 0.0f, 0.0f), 90.0f * M_PI / 180.0f));
+  // sidewalk->applyTranslate(translate(Vector4(10.f, 0.2f, 0.f)));
 
-  float sidewalk_half_height =
-      (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
-  sidewalk->applyTranslate(translate(Vector4(10.0f, -0.3f, 35.0f)));
+  // float sidewalk_half_height =
+  //     (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
+  // sidewalk->applyTranslate(translate(Vector4(10.0f, -0.3f, 35.0f)));
+  Texture* tex_chao = new Texture("textures/floor_texture.png");
+  tex_chao->loadTexture();
+  std::unique_ptr<Plain> sidewalk = std::make_unique<Plain>(
+    Point4(0,0,0),Vector4(0,1.f,0), Point3(.3f,.3f,.3f),Point3(.3f,9.f,.3f),Point3(.3f,9.f,.3f)
+  );
+
   world.push_back(std::move(sidewalk));
 
   std::unique_ptr<ListMesh> tree = createMesh("tree01.obj", "textures/tree01_spring.png");
@@ -515,14 +521,14 @@ int main()
 #pragma region trashes
 
   std::unique_ptr<ListMesh> trash1 =
-      createMesh("trash-can.obj", "textures/trash-can.png");
+      createMesh("trash-can.obj", "textures/tash-can.png");
   trash1->applyScale(scale(Vector4(2.f, 2.f, 2.f)));
   trash1->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), 90.f * M_PI / 180.0f));
   trash1->applyTranslate(translate(Vector4(17.f, 0.f, 5.f)));
   world.push_back(std::move(trash1));
 
   std::unique_ptr<ListMesh> trash2 =
-      createMesh("trash-can.obj", "textures/trash-can.png");
+      createMesh("trash-can.obj", "textures/tash-can.png");
   trash2->applyScale(scale(Vector4(2.f, 2.f, 2.f)));
   trash2->applyRotation(rotate(Vector4(0.f, 1.f, 0.f), -90.f * M_PI / 180.0f));
   trash2->applyTranslate(translate(Vector4(-.5f, 0.f, 32.f)));
