@@ -1,9 +1,12 @@
 #include "../../utils/Sphere.hpp"
 #include "../../utils/Point3.hpp"
 #include "../../utils/Vector3.hpp"
+#include "../../utils/Triangle.hpp"
+#include "../aux_functions.hpp"
 #include <cmath>
 
-Sphere::Sphere(){
+Sphere::Sphere()
+{
   this->center = Point4(0, 0, 0);
   this->radius = 0;
 }
@@ -17,13 +20,16 @@ Sphere::Sphere(const Point4 &center, float radius, const Point3 &color, const Po
   this->specular_color = specular_color;
 }
 
-bool Sphere::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const{
+bool Sphere::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, float t_max, HitRecord &hr) const
+{
+
   Vector4 w = origin - center;
   float b = 2.0f * dot(dir, w);
   float c = dot(w, w) - radius * radius;
 
   float disc = b * b - 4.0f * c;
-  if(disc < 0){
+  if (disc < 0)
+  {
     return false;
   }
 
@@ -31,20 +37,71 @@ bool Sphere::Intersect(const Point4 &origin, const Vector4 &dir, float t_min, fl
   float t1 = (-b + sqrtD) * 0.5f;
   float t2 = (-b - sqrtD) * 0.5f;
 
-  if(t2 > t_min && t2 < t_max){
+  if (t2 > t_min && t2 < t_max)
+  {
     hr.t = t2;
-    hr.p_int = Point4(origin + t2*dir);
+    hr.p_int = Point4(origin + t2 * dir);
     Vector4 point_normal = hr.p_int - center;
     hr.normal = normalize(point_normal);
     hr.obj_ptr = this;
   }
-  else if(t1 > t_min && t1 < t_max) {
+  else if (t1 > t_min && t1 < t_max)
+  {
     hr.t = t1;
-    hr.p_int = Point4(origin + t1*dir);
+    hr.p_int = Point4(origin + t1 * dir);
     Vector4 point_normal = hr.p_int - center;
     hr.normal = normalize(point_normal);
     hr.obj_ptr = this;
-  } else return false;
+  }
+  else
+    return false;
 
   return true;
+}
+
+void Sphere::CreateUVSphere()
+{
+  int paralelos = 20;
+  int meridianos = 20;
+
+  this->sphereMesh = std::make_unique<ListMesh>();
+  ListMesh *meshPtr = this->sphereMesh.get();
+
+  std::vector<std::unique_ptr<Point4>> v;
+  std::vector<std::unique_ptr<Point3>> vt;
+  std::vector<std::unique_ptr<Triangle>> f;
+  Point4 centroid;
+
+  float anguloPasso = 360.f / meridianos;
+  float passoParalelas = this->radius * 2 / paralelos;
+  Point4 pontoEsferaCima = this->center;
+  pontoEsferaCima.y += this->radius;
+
+  for (int j = 0; j < paralelos; j++)
+  {
+
+    std::cout << "Paralela: " << j << "\n";
+    float y_atual = pontoEsferaCima.y - (passoParalelas * j);
+
+    float y_local = y_atual - this->center.y;
+
+    float raioZ, negativeRaioz;
+    float c = std::pow(this->radius, 2) - std::pow(y_local, 2);
+    if (c < 0.0f)
+      c = 0.0f;
+
+    raioZ = std::sqrt(c);
+    std::cout << raioZ << "\n";
+    for (int i = 0; i < meridianos; i++)
+    {
+      float anguloRad = anguloPasso * i * M_PI / 180.f;
+
+      float px = this->center.x + raioZ * std::sin(anguloRad);
+      float pz = this->center.z + raioZ * std::cos(anguloRad);
+
+   
+    }
+  }
+
+  std::cout << "\n";
 }

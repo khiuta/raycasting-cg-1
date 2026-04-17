@@ -423,6 +423,7 @@ int main()
   auto lamp2 = std::make_unique<Sphere>(Point4(50.0f, 16.0f, 41.0f), 1.0f,
                                         lamp_color.color, lamp_color.color,
                                         lamp_color.spec);
+                                        lamp2->CreateUVSphere();
 #pragma region creto
 
   std::unique_ptr<ListMesh> creto = createMesh("Hip Hop Dancing.obj", "textures/Old man.png");
@@ -621,7 +622,7 @@ int main()
       mirror_origin, mirror_width_pt, mirror_height_pt, mirror_color,
       mirror_color, mirror_spec, 1.0f);
 
- //world.push_back(std::move(vitrine_espelhada));
+ world.push_back(std::move(vitrine_espelhada));
 #pragma endregion
 
 #pragma endregion
@@ -868,8 +869,8 @@ int main()
 
     if (!useRasterization && redraw)
     {
-      float oblique_scale = 0.5f;
-      float oblique_angle_rad = 0.0f;
+      float oblique_scale = .3f;
+      float oblique_angle_rad = 1.f*M_PI/180.f;
       ::Color *imgBuffer = static_cast<::Color *>(rayImage.data);
 #pragma omp parallel for schedule(dynamic)
       for (int y = 0; y < nLin; y++)
