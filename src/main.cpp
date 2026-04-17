@@ -768,7 +768,9 @@ int main()
         if (cone)
         {
           Point4 center = cone->center;
+          Point4 vertice = cone->vertice;
           cone->center = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
+           cone->vertice = Point4(moveVec.x + vertice.x, moveVec.y + vertice.y, moveVec.z + vertice.z);
           redraw = true;
         }
       }
