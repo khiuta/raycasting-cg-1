@@ -118,7 +118,7 @@ float calculate_FOV_from_dWindow(float dWindow, float wWindow)
   return fov_radians * 180.0f / M_PI;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   std::string obj_name = "car_1.obj";
 
@@ -292,15 +292,15 @@ int main(int argc, char* argv[])
   // float sidewalk_half_height =
   //     (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
   // sidewalk->applyTranslate(translate(Vector4(10.0f, -0.3f, 35.0f)));
-  char* texture = "textures/floor2.png";
-  if(argv[1])
+  char *texture = "textures/floor2.png";
+  if (argv[1])
   {
     texture = argv[1];
   }
   Texture *tex_chao = new Texture(texture);
   tex_chao->loadTexture();
   std::unique_ptr<Plain> sidewalk = std::make_unique<Plain>(
-      Point4(0, 0, 0), Vector4(0, 1.f, 0), Point3(.3f, .3f, .3f), Point3(.3f, 9.f, .3f), Point3(0,0,0));
+      Point4(0, 0, 0), Vector4(0, 1.f, 0), Point3(.3f, .3f, .3f), Point3(.3f, 9.f, .3f), Point3(0, 0, 0));
   sidewalk->texture = tex_chao;
   tex_chao->loadTexture();
 
@@ -587,11 +587,21 @@ int main(int argc, char* argv[])
     world.push_back(std::move(pilar));
   }
 
-  std::unique_ptr<ListMesh> banco = createMesh("Park Bench.obj","textures/brown.png");
-  banco->applyScale(scale(Vector4(3.5f,3.5f,3.5f)));
-  banco->applyRotation(rotate(Vector4(0,1,0),-90*M_PI/180.f));
-  banco->applyTranslate(translate(Vector4(30.f,2.f,80.f)));
-  world.push_back(std::move(banco));
+  std::unique_ptr<ListMesh> mesa = createMesh("Park Bench.obj", "textures/brown.png");
+  mesa->applyScale(scale(Vector4(3.5f, 3.5f, 3.5f)));
+  mesa->applyRotation(rotate(Vector4(0, 1, 0), 0 * M_PI / 180.f));
+  mesa->applyTranslate(translate(Vector4(30.f, 2.f, 80.f)));
+  world.push_back(std::move(mesa));
+
+  for (int i = 0; i < 3; i++)
+  {
+
+    std::unique_ptr<ListMesh> banco = createMesh("Bench.obj", "textures/brown.png");
+    banco->applyScale(scale(Vector4(5.5f, 5.5f, 5.5f)));
+    banco->applyRotation(rotate(Vector4(0, 1, 0), 0 * M_PI / 180.f));
+    banco->applyTranslate(translate(Vector4(40.f, 2.f, 70.f + 10.f*i)));
+    world.push_back(std::move(banco));
+  }
 
   world.push_back(std::move(telhadoCoreto));
   world.push_back(std::move(coretoBse));
