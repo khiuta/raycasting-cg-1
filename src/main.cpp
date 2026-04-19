@@ -529,6 +529,15 @@ int main(int argc, char *argv[])
   predio3->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
   predio3->applyTranslate(translate(Vector4(55.f, 0.f, 0.f)));
 
+  std::unique_ptr<ListMesh> predio4 = createMesh(
+    "psx_-_normal_building.obj", "textures/lambert2_baseColor.png");
+    predio4->applyTranslate(translate(Vector4(-predio4->centroid.x,-predio4->centroid.y,-predio4->centroid.z)));
+    predio4->applyScale(scale(Vector4(70.f, 70.f, 70.f)));
+     predio4->applyTranslate(translate(Vector4(predio4->centroid.x,predio4->centroid.y,predio4->centroid.z)));
+    predio4->applyTranslate(translate(Vector4(0.f, 20.f, -80.f)));
+
+  world.push_back(std::move(predio4));
+
 #pragma region trashes
 
   std::unique_ptr<ListMesh> trash1 =
@@ -599,7 +608,7 @@ int main(int argc, char *argv[])
     std::unique_ptr<ListMesh> banco = createMesh("Bench.obj", "textures/brown.png");
     banco->applyScale(scale(Vector4(5.5f, 5.5f, 5.5f)));
     banco->applyRotation(rotate(Vector4(0, 1, 0), 0 * M_PI / 180.f));
-    banco->applyTranslate(translate(Vector4(40.f, 2.f, 70.f + 10.f*i)));
+    banco->applyTranslate(translate(Vector4(40.f, 2.f, 70.f + 10.f * i)));
     world.push_back(std::move(banco));
   }
 
@@ -645,9 +654,9 @@ int main(int argc, char *argv[])
   Point3 specular_plains(.1, .1, .1);
   Point3 floor_col(.9, .5, 0);
 
-  Point4 mirror_origin(18.0f, 0.01f, 15.f);
-  Point4 mirror_width_pt(42.8f, 0.01f, 15.f);
-  Point4 mirror_height_pt(18.0f, 10.0f, 15.f);
+  Point4 mirror_origin(19.0f, 0.01f, 15.f);
+  Point4 mirror_width_pt(40.8f, 0.01f, 15.f);
+  Point4 mirror_height_pt(19.0f, 10.0f, 15.f);
 
   Point3 mirror_color(0, 0, 0);
   Point3 mirror_spec(1, 1, 1);
