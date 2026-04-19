@@ -32,7 +32,7 @@ Vector4 noise_reflect_ray(const Vector4 &v, const Vector4 &n)
 {
   Vector4 vr;
   vr = v - n * 2.0f * dot(v, n);
-  // vr.x += random_float2() / 20;
+// vr.x += random_float2() / 20;
   return vr;
 }
 Point3 getStarryBackground(const Vector4 &dir)
@@ -120,6 +120,7 @@ Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> &lights, Poi
     v = v - std::floor(v);
     v = 1.0f - v;
 
+
     // Usando o filtro bilinear
     obj_color = sampleTextureBilinear(rec.texture, u, v);
   }
@@ -173,16 +174,16 @@ Point3 setColor(const Vector4 &d, HitRecord rec, std::vector<Light> &lights, Poi
       Point3 diff_part = (obj_color * l.color) * dif_i;
       final_color = final_color + diff_part;
 
-      // Agora funciona porque reflect_ray foi declarada antes
+      
       Vector4 reflection;
       if (rec.reflectivity == 1)
       {
-        noise_reflect_ray(rec.normal, light_dir);
+        reflection = noise_reflect_ray(rec.normal, light_dir);
       }
       else
       {
 
-        reflect_ray(rec.normal, light_dir);
+        reflection = reflect_ray(rec.normal, light_dir);
       }
       float spec_i = std::pow(std::max(0.f, dot(reflection, -d)), 50) * intensity;
       Point3 spec_part = (rec.obj_ptr->getSpecular() * l.color) * spec_i;

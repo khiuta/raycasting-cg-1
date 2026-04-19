@@ -118,7 +118,7 @@ float calculate_FOV_from_dWindow(float dWindow, float wWindow)
   return fov_radians * 180.0f / M_PI;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
   std::string obj_name = "car_1.obj";
 
@@ -292,11 +292,17 @@ int main()
   // float sidewalk_half_height =
   //     (sidewalk->aabb.max_y - sidewalk->aabb.min_y) / 2.0f;
   // sidewalk->applyTranslate(translate(Vector4(10.0f, -0.3f, 35.0f)));
-  Texture* tex_chao = new Texture("textures/floor_texture.png");
+  char* texture = "textures/floor2.png";
+  if(argv[1])
+  {
+    texture = argv[1];
+  }
+  Texture *tex_chao = new Texture(texture);
   tex_chao->loadTexture();
   std::unique_ptr<Plain> sidewalk = std::make_unique<Plain>(
-    Point4(0,0,0),Vector4(0,1.f,0), Point3(.3f,.3f,.3f),Point3(.3f,9.f,.3f),Point3(.3f,9.f,.3f)
-  );
+      Point4(0, 0, 0), Vector4(0, 1.f, 0), Point3(.3f, .3f, .3f), Point3(.3f, 9.f, .3f), Point3(0,0,0));
+  sidewalk->texture = tex_chao;
+  tex_chao->loadTexture();
 
   world.push_back(std::move(sidewalk));
 
@@ -429,7 +435,7 @@ int main()
   auto lamp2 = std::make_unique<Sphere>(Point4(50.0f, 16.0f, 41.0f), 1.0f,
                                         lamp_color.color, lamp_color.color,
                                         lamp_color.spec);
-                                        lamp2->CreateUVSphere();
+  lamp2->CreateUVSphere();
 #pragma region creto
 
   std::unique_ptr<ListMesh> creto = createMesh("Hip Hop Dancing.obj", "textures/Old man.png");
@@ -518,6 +524,11 @@ int main()
   predio2->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
   predio2->applyTranslate(translate(Vector4(-20.f, 0.f, 0.f)));
 
+  std::unique_ptr<ListMesh> predio3 = createMesh(
+      "BrickBuilding.obj", "textures/brick_buillding_front_lowres.png");
+  predio3->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
+  predio3->applyTranslate(translate(Vector4(55.f, 0.f, 0.f)));
+
 #pragma region trashes
 
   std::unique_ptr<ListMesh> trash1 =
@@ -576,6 +587,12 @@ int main()
     world.push_back(std::move(pilar));
   }
 
+  std::unique_ptr<ListMesh> banco = createMesh("Park Bench.obj","textures/brown.png");
+  banco->applyScale(scale(Vector4(3.5f,3.5f,3.5f)));
+  banco->applyRotation(rotate(Vector4(0,1,0),-90*M_PI/180.f));
+  banco->applyTranslate(translate(Vector4(30.f,2.f,80.f)));
+  world.push_back(std::move(banco));
+
   world.push_back(std::move(telhadoCoreto));
   world.push_back(std::move(coretoBse));
 
@@ -610,6 +627,7 @@ int main()
   world.push_back(std::move(predio1));
   world.push_back(std::move(lateralPredio1));
   world.push_back(std::move(predio2));
+  world.push_back(std::move(predio3));
 
 #pragma endregion
 
@@ -628,7 +646,7 @@ int main()
       mirror_origin, mirror_width_pt, mirror_height_pt, mirror_color,
       mirror_color, mirror_spec, 1.0f);
 
- world.push_back(std::move(vitrine_espelhada));
+  world.push_back(std::move(vitrine_espelhada));
 #pragma endregion
 
 #pragma endregion
@@ -757,27 +775,27 @@ int main()
           redraw = true;
         }
 
-        Sphere *sphere = dynamic_cast<Sphere * > (selectedObject);
+        Sphere *sphere = dynamic_cast<Sphere *>(selectedObject);
         if (sphere)
         {
           Point4 center = sphere->center;
           sphere->center = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
           redraw = true;
         }
-        Cylinder *cylinder = dynamic_cast<Cylinder * > (selectedObject);
+        Cylinder *cylinder = dynamic_cast<Cylinder *>(selectedObject);
         if (cylinder)
         {
           Point4 center = cylinder->baseCenter;
           cylinder->baseCenter = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
           redraw = true;
         }
-        Cone * cone = dynamic_cast<Cone * > (selectedObject);
+        Cone *cone = dynamic_cast<Cone *>(selectedObject);
         if (cone)
         {
           Point4 center = cone->center;
           Point4 vertice = cone->vertice;
           cone->center = Point4(moveVec.x + center.x, moveVec.y + center.y, moveVec.z + center.z);
-           cone->vertice = Point4(moveVec.x + vertice.x, moveVec.y + vertice.y, moveVec.z + vertice.z);
+          cone->vertice = Point4(moveVec.x + vertice.x, moveVec.y + vertice.y, moveVec.z + vertice.z);
           redraw = true;
         }
       }
@@ -876,7 +894,7 @@ int main()
     if (!useRasterization && redraw)
     {
       float oblique_scale = .3f;
-      float oblique_angle_rad = 1.f*M_PI/180.f;
+      float oblique_angle_rad = 1.f * M_PI / 180.f;
       ::Color *imgBuffer = static_cast<::Color *>(rayImage.data);
 #pragma omp parallel for schedule(dynamic)
       for (int y = 0; y < nLin; y++)

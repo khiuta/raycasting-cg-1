@@ -80,7 +80,7 @@ void Sphere::CreateUVSphere()
   for (int j = 0; j < paralelos; j++)
   {
 
-    std::cout << "Paralela: " << j << "\n";
+   
     float y_atual = pontoEsferaCima.y - (passoParalelas * j);
 
     float y_local = y_atual - this->center.y;
@@ -91,7 +91,7 @@ void Sphere::CreateUVSphere()
       c = 0.0f;
 
     raioZ = std::sqrt(c);
-    std::cout << raioZ << "\n";
+   
     for (int i = 0; i < meridianos; i++)
     {
       float anguloRad = anguloPasso * i * M_PI / 180.f;
@@ -103,5 +103,5 @@ void Sphere::CreateUVSphere()
     }
   }
 
-  std::cout << "\n";
+ 
 }

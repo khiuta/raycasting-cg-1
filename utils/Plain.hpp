@@ -9,6 +9,7 @@ class Plain : public Object {
         Point3 color;
         Point3 diffuse_color;
         Point3 specular_color;
+        Texture* texture;
 
         Plain(const Point4& p, const Vector4& normal, const Point3& color, const Point3 &diffuse_color, const Point3 &specular_color);
         Plain(const Point4 &p0, const Point4 &p1, const Point4 &p2, const Point3 &color, const Point3 &diffuse_color, const Point3 &specular_color);
