@@ -118,6 +118,11 @@ float calculate_FOV_from_dWindow(float dWindow, float wWindow)
   return fov_radians * 180.0f / M_PI;
 }
 
+bool FUSCA_HAS_ROTATED  = false;
+bool shoul_show_hand = false;
+int MAO_X, MAO_Y = 0;
+int HAND_SENSITIVITY = 2;
+
 int main(int argc, char *argv[])
 {
   std::string obj_name = "car_1.obj";
@@ -157,8 +162,8 @@ int main(int argc, char *argv[])
   post_spot2.color = Point3(1.0f, 0.9f, 0.0f);
   post_spot2.position = Point4(50.0f, 14.5f, 41.0f);
   post_spot2.direction = Vector4(0.0f, -1.0f, 0.0f);
-  post_spot2.cutoff = std::cos(40.0f * M_PI / 180.0f);
-  post_spot2.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
+  post_spot2.cutoff = std::cos(10.0f * M_PI / 180.0f);
+  post_spot2.outer_cutoff = std::cos(20.0f * M_PI / 180.0f);
 
   Light farol1_carro2;
   farol1_carro2.type = LightType::SPOTLIGHT;
@@ -177,15 +182,18 @@ int main(int argc, char *argv[])
   farol2_carro2.outer_cutoff = std::cos(20.f * M_PI / 180.0f);
 
   Light luzCoreto;
-  luzCoreto.type = LightType::SPOTLIGHT;
+  luzCoreto.type = LightType::POINTLIGHT;
   luzCoreto.color = Point3(1.0f, 0.9f, 0.0f);
-  luzCoreto.position = Point4(20.0f, 9.f, 70.0f);
+  luzCoreto.position = Point4(30.0f, 9.f, 80.0f);
   luzCoreto.direction = Vector4(0.0f, -1.0f, 0.0f);
   luzCoreto.cutoff = std::cos(40.0f * M_PI / 180.0f);
   luzCoreto.outer_cutoff = std::cos(45.0f * M_PI / 180.0f);
 
+  
+  
+
   lights.push_back(luzCoreto);
-  lights.push_back(directional);
+ // lights.push_back(directional);
   lights.push_back(post_spot);
   lights.push_back(post_spot2);
   lights.push_back(farol1_carro2);
@@ -206,7 +214,7 @@ int main(int argc, char *argv[])
   car1->applyTranslate(translate(Vector4(20.0f, car_half_height, 30.0f)));
 
   std::unique_ptr<ListMesh> car2 = createMesh("fuscao.obj", "textures/gulf_blue.png");
-
+  ListMesh *ptr_fusca = car2.get();
   car2->applyTranslate(translate(
       Vector4(-car2->centroid.x, -car2->centroid.y, -car2->centroid.z)));
   car2->applyScale(scale(Vector4(2.5f, 2.5f, 2.5f)));
@@ -530,11 +538,11 @@ int main(int argc, char *argv[])
   predio3->applyTranslate(translate(Vector4(55.f, 0.f, 0.f)));
 
   std::unique_ptr<ListMesh> predio4 = createMesh(
-    "psx_-_normal_building.obj", "textures/lambert2_baseColor.png");
-    predio4->applyTranslate(translate(Vector4(-predio4->centroid.x,-predio4->centroid.y,-predio4->centroid.z)));
-    predio4->applyScale(scale(Vector4(70.f, 70.f, 70.f)));
-     predio4->applyTranslate(translate(Vector4(predio4->centroid.x,predio4->centroid.y,predio4->centroid.z)));
-    predio4->applyTranslate(translate(Vector4(0.f, 20.f, -80.f)));
+      "psx_-_normal_building.obj", "textures/lambert2_baseColor.png");
+  predio4->applyTranslate(translate(Vector4(-predio4->centroid.x, -predio4->centroid.y, -predio4->centroid.z)));
+  predio4->applyScale(scale(Vector4(70.f, 70.f, 70.f)));
+  predio4->applyTranslate(translate(Vector4(predio4->centroid.x, predio4->centroid.y, predio4->centroid.z)));
+  predio4->applyTranslate(translate(Vector4(0.f, 20.f, -80.f)));
 
   world.push_back(std::move(predio4));
 
@@ -608,7 +616,7 @@ int main(int argc, char *argv[])
     std::unique_ptr<ListMesh> banco = createMesh("Bench.obj", "textures/brown.png");
     banco->applyScale(scale(Vector4(5.5f, 5.5f, 5.5f)));
     banco->applyRotation(rotate(Vector4(0, 1, 0), 0 * M_PI / 180.f));
-    banco->applyTranslate(translate(Vector4(40.f, 2.f, 70.f + 10.f * i)));
+    banco->applyTranslate(translate(Vector4(40.f, 1.4f, 70.f + 10.f * i)));
     world.push_back(std::move(banco));
   }
 
@@ -702,6 +710,8 @@ int main(int argc, char *argv[])
   bool redraw = true;
   bool useRasterization = false;
   SetTargetFPS(60);
+
+   Texture2D mao = LoadTexture("textures/mao.png");
 
   while (!WindowShouldClose())
   {
@@ -836,6 +846,47 @@ int main(int argc, char *argv[])
       projectionType = Projection::Oblique;
       redraw = true;
     }
+    if (IsKeyPressed(KEY_FOUR))
+    {
+      lookFrom = Point4(95.0f, 30.0f, 85.0f);
+      lookAt = Point4(60.f, 5.0f, 40.0f);
+      // Point4 lookAt(0.f, 5.0f, 70.0f);
+      vUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
+      if(!FUSCA_HAS_ROTATED)
+      {
+
+        ptr_fusca->rebuildStructures();
+        Vector4 centroid = Vector4(ptr_fusca->centroid.x, ptr_fusca->centroid.y, ptr_fusca->centroid.z);
+        ptr_fusca->applyTranslate(translate(centroid * -1));
+        ptr_fusca->applyRotation(rotate(Vector4(0, 1, 0), M_PI / 4));
+        ptr_fusca->applyTranslate(translate(centroid)); 
+        FUSCA_HAS_ROTATED = true;
+      }
+
+      redraw = true;
+    }
+
+    //1 Ponto de fuga
+    if (IsKeyPressed(KEY_FIVE))
+    {
+      lookFrom = Point4(60.0f, 15.0f, 90.0f);
+      lookAt = Point4(60.f, 5.0f, -20.0f);
+      // Point4 lookAt(0.f, 5.0f, 70.0f);
+      vUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
+      
+
+      redraw = true;
+    }
+    if (IsKeyPressed(KEY_SIX))
+    {
+      lookFrom = Point4(30.0f, 15.0f, 30.0f);
+      lookAt = Point4(30.f, 5.0f, 60.0f);
+      // Point4 lookAt(0.f, 5.0f, 70.0f);
+      vUp = Vector4(0.0f, 1.0f, 0.0f, 0.0f);
+      
+
+      redraw = true;
+    }
 
     if (IsKeyDown(KEY_W))
     {
@@ -868,6 +919,19 @@ int main(int argc, char *argv[])
       vUp = rotate(w, -cameraSensitivity * M_PI / 180.f) * vUp;
       redraw = true;
     }
+
+    if (IsKeyDown(KEY_K))
+    {
+      lookFrom.y -=2.f;
+      redraw = true;
+    }
+    if (IsKeyDown(KEY_L))
+    {
+      lookFrom.y +=2.f;
+       redraw = true;
+    }
+
+
 
     // focal distance control
     if (IsKeyDown(KEY_E))
@@ -902,6 +966,31 @@ int main(int argc, char *argv[])
       dWindow = calculate_dWindow_from_FOV(fov_atual, wWindow);
       redraw = true;
     }
+     if (IsKeyDown(KEY_H))
+    {
+      shoul_show_hand = !shoul_show_hand;
+   
+    }
+
+    if(IsKeyDown(KEY_F1))
+    {
+      MAO_X -=HAND_SENSITIVITY;
+    }
+    if(IsKeyDown(KEY_F2))
+    {
+      MAO_X +=HAND_SENSITIVITY;
+    }
+     if(IsKeyDown(KEY_F3))
+    {
+      MAO_Y-=HAND_SENSITIVITY;
+    }
+    if(IsKeyDown(KEY_F4))
+    {
+      MAO_Y+=HAND_SENSITIVITY;
+    }
+
+
+
 
     // camera sync
     w = (lookFrom - lookAt);
@@ -1056,7 +1145,13 @@ int main(int argc, char *argv[])
       ClearBackground(BLACK);
       DrawTexture(tex, 0, 0, WHITE);
     }
+    if(shoul_show_hand)
+    {
+     float mouseX = GetMouseX() - mao.width/2;
+      float mouseY = GetMouseY() - mao.height/2;
 
+      DrawTexture(mao, mouseX, mouseY, WHITE);
+    }
     // ui
     DrawRectangle(0, nLin - 85, nCol, 85, Fade(BLACK, 0.7f));
 

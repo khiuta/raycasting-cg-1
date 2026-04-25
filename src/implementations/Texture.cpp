@@ -1,7 +1,7 @@
 #include "../../utils/Texture.hpp"
 #include <iostream>
 
-// #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 #include "../../utils/stb_image.h"
 
 Texture::Texture(const std::string &filename) { this->filename = filename; }

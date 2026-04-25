@@ -9,4 +9,5 @@ void main()
 {
     gl_Position = u_MVP * vec4(position, 1.0);
     aColor = vec3(sin(position.x/10), cos(position.y/1), sin(position.z));
+   
 }
